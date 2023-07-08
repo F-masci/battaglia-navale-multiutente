@@ -1,0 +1,5 @@
+.vscode/
+obj/*
+main
+.DS_Store
+*.xcodeproj
