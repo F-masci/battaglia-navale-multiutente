@@ -1,5 +1,5 @@
-#include "lib.h"
-#include "config.h"
+#include "../lib/lib.h"
+#include "../config/config.h"
 
 extern struct sockaddr_in addr_server;
 

@@ -1,5 +1,7 @@
 .vscode/
-obj/*
-main
+obj/*/*
+/main
+/server
+/client
 .DS_Store
 *.xcodeproj

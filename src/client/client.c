@@ -19,13 +19,13 @@
  *
 */
 
-#include "lib.h"
-#include "config.h"
+#include "../lib/lib.h"
+#include "../config/config.h"
+#include "../lib/client.h"
 
-#include "server.h"
-#include "client.h"
+struct sockaddr_in addr_server;
 
-int main() {
+int main(void) {
 
     /* -- CONFIG SERVER ADDRESS -- */
 
@@ -34,11 +34,5 @@ int main() {
     addr_server.sin_port = htons(PORT);     // 6500
     addr_server.sin_addr.s_addr = ADDRESS;  // 0.0.0.0
 
-    if(fork() != 0 ) {  // Parent
-        waitConnections();      // SERVER
-    } else {    // Child
-        clientConnection();     // CLIENT
-    }
-
-    return 0;
+    clientConnection();                     // CLIENT CONNECTION
 }

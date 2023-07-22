@@ -1,34 +1,8 @@
-#include "lib.h"
-#include "config.h"
-
-extern int socket_server;
-extern struct sockaddr_in addr_server;
+#include "../lib/lib.h"
+#include "../config/config.h"
+#include "connection.h"
 
 pthread_mutex_t mut[WAITING_THREADS];
-
-#define BUFF_LEN 4096
-void *client_thread(void *args) {
-
-    int socket_client = *( (int *) args );
-
-    char *buffer = (char *)malloc(sizeof(*buffer) * BUFF_LEN);
-
-    PRINT("Ready to receive data\n")
-
-    do {
-        read(socket_client, buffer, BUFF_LEN);
-        printf("Client: %s", buffer);
-        bzero(buffer, strlen(buffer));
-    } while (strcmp(buffer, "quit") != 0);
-    close(socket_client);
-
-    free(buffer);
-
-    return NULL;
-
-}
-#undef BUFF_LEN
-
 
 void *waiting_thread(void * args) {
 
