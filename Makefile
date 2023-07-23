@@ -14,7 +14,8 @@ $(OBJ_DIR)/$(CLN_DIR)/%.o: $(SRC_DIR)/$(CLN_DIR)/%.c
 	$(CC) $< -c $(CFLAGS) -o $@
 
 all:
-	echo "Compile with make server or make client"
+	make server
+	make client
 
 server: $(patsubst $(SRC_DIR)/$(SRV_DIR)/%.c, $(OBJ_DIR)/$(SRV_DIR)/%.o, $(wildcard $(SRC_DIR)/$(SRV_DIR)/*.c))
 	$(CC) $(patsubst $(SRC_DIR)/$(SRV_DIR)/%.c, $(OBJ_DIR)/$(SRV_DIR)/%.o, $(wildcard $(SRC_DIR)/$(SRV_DIR)/*.c)) -o server $(CFLAGS)

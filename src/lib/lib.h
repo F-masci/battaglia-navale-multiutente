@@ -12,6 +12,8 @@
 #include <stdlib.h>
 #include <strings.h>
 #include <string.h>
+#include <stdbool.h>
+#include <errno.h>
 
 #define PRINT(...) {         \
     printf(__VA_ARGS__);     \

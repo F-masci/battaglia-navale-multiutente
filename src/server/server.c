@@ -22,11 +22,19 @@
 #include "../lib/lib.h"
 #include "../config/config.h"
 #include "../lib/server.h"
+#include "player.h"
 
 int socket_server;
 struct sockaddr_in addr_server;
 
+size_t n_players = 0;                           // Numero di giocatori in lobby
+player_t **players;                             // Array di puntatori ai metadati dei giocatori
+
 int main() {
+
+    /* -- INIT GLOBAL VARS -- */
+
+    initPlayersArray();
 
     /* -- CONFIG SERVER ADDRESS -- */
 
@@ -35,7 +43,7 @@ int main() {
     addr_server.sin_port = htons(PORT);     // 6500
     addr_server.sin_addr.s_addr = ADDRESS;  // 0.0.0.0
 
-    waitConnections();      // SERVER
+    waitConnections();      // Create lobby
 
     return 0;
 }

@@ -5,3 +5,6 @@
 
 #define WAITING_THREADS 5
 #define PENDING 30
+
+#define DEFAULT_PLAYERS_LEN 2
+#define NICKNAME_LEN 256

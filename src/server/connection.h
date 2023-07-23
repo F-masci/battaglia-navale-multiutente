@@ -3,4 +3,4 @@
 extern int socket_server;
 extern struct sockaddr_in addr_server;
 
-extern void *client_thread(void *args);
+extern void *lobby_handler(void *args);

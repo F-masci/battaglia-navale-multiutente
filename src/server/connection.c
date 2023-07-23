@@ -23,7 +23,7 @@ waiting_thread_loop:
     PRINT("Thread %ld: accepted\n", index)
     pthread_mutex_unlock(&(mut[next]));
 
-    pthread_create(&pid, NULL, client_thread, (void *) &socket_client);
+    pthread_create(&pid, NULL, lobby_handler, (void *) &socket_client);
 
     goto waiting_thread_loop;
 
