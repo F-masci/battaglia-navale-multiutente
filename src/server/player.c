@@ -40,6 +40,7 @@ bool setNicknamePlayer(size_t index, char *nickname) {
     errno = 0;
     size_t len = strlen(nickname);
     if(len > 255) return false;
+    bzero(players[index]->nickname, 256);
     memcpy(players[index]->nickname, nickname, len);
     return true;
 }
