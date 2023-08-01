@@ -43,13 +43,12 @@ int main(void) {
     addr_server.sin_port = htons(PORT);     // 6500
     addr_server.sin_addr.s_addr = ADDRESS;  // 0.0.0.0
 
-    clientConnection();   
-                      // CLIENT CONNECTION
+    clientConnection();                     // CLIENT CONNECTION
 
-    map=(char **)malloc(MAP_SIZE*sizeof(char *));
-    for(i=0; i<MAP_SIZE; i++) map[i]=(char *)malloc(MAP_SIZE*sizeof(char));
+    map = (char **) malloc(MAP_SIZE * sizeof(*map));
+    for(i=0; i<MAP_SIZE; i++) map[i] = (char *) malloc(MAP_SIZE * sizeof(*(map[i])));
 
-    /*-- MAP INITIALIZATION --*/
+    /* -- MAP INITIALIZATION -- */
 
     for(i=0; i<MAP_SIZE; i++){
         for(int j=0; j<MAP_SIZE; j++){
@@ -69,10 +68,10 @@ int main(void) {
         print_map(map);
 
         PRINT("\nNavi da posizionare: \n");
-        PRINT("1. %d DESTROYER (DIM 2)\n", c[0]);
-        PRINT("2. %d SUBMARINE (DIM 3)\n", c[1]);
-        PRINT("3. %d BATTLESHIP (DIM 4)\n", c[2]);
-        PRINT("4. %d CARRIER (DIM 5)\n", c[3]);
+        PRINT("\t[1] %d DESTROYER (DIM 2)\n", c[0]);
+        PRINT("\t[2] %d SUBMARINE (DIM 3)\n", c[1]);
+        PRINT("\t[3] %d BATTLESHIP (DIM 4)\n", c[2]);
+        PRINT("\t[4] %d CARRIER (DIM 5)\n", c[3]);
 
         //aggiungere controllo input 
 
