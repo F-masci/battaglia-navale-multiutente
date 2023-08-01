@@ -15,7 +15,6 @@
 #include <stdbool.h>
 #include <errno.h>
 
-#define PRINT(...) {         \
+#define PRINT(...)           \
     printf(__VA_ARGS__);     \
-    fflush(stdout);          \
-}
+    fflush(stdout);
