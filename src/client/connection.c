@@ -1,6 +1,4 @@
-#include "../lib/lib.h"
-#include "../config/config.h"
-#include "../config/cmd.h"
+#include "connection.h"
 
 extern struct sockaddr_in addr_server;
 extern int socket_client;
@@ -16,7 +14,7 @@ void clientConnection(void)
     
 retry_connect:
     if(connect(socket_client, (struct sockaddr *)&addr_server, sizeof(addr_server)) != -1) {
-        PRINT("\nSeleziona un comando:\n")
+        PRINT("\nSeleziona un comando:\n\n")
         PRINT("\t[1] Modifica il tuo nickname\n")
         PRINT("\t[2] Lista dei giocatori attualmente connessi\n")
         PRINT("\t[3] Inizia la partita\n\n")

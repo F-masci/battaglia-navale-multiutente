@@ -2,8 +2,8 @@
 
 #include "type.h"
 
-#include "../lib/lib.h"
-#include "../config/config.h"
+#include "../shared/lib.h"
+#include "../shared/config.h"
 #include "map.h"
 
 player_t *createPlayer(int);

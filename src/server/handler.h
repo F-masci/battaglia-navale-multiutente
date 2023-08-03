@@ -1,10 +1,11 @@
 #pragma once
 
-#include "../lib/lib.h"
-#include "../config/config.h"
-#include "../config/cmd.h"
+#include "../shared/lib.h"
+#include "../shared/config.h"
+#include "../shared/cmd.h"
 #include "player.h"
 #include "cmd.h"
 #include "helpers.h"
+#include "map.h"
 
 void *client_handler(void *);

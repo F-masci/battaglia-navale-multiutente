@@ -1,20 +1,14 @@
-#include "../lib/lib.h"
-#include "../config/map.h"
-#include "../config/cmd.h"
+#include "map.h"
 
-void print_map(char **map);
-void place_ship(char **map);
-void delete_ship(char **map);
-void map_initialization(char **map);
+extern int socket_client;
+extern cell_t **map;
 
 int size=0;
 ship_t *ships;
 int *c; //counters for how many ships are left to place in the map
-extern int socket_client;
 
 #define BUFF_LEN 1024
-
-void map_initialization(char **map){
+void mapInitialization(void) {
 
     int  option=0;
     int n=DESTROYER + SUB + BATTLESHIP + CARRIER; //total number of ships
@@ -38,23 +32,26 @@ void map_initialization(char **map){
 
     while(option!=3){
 
-        print_map(map);
+        print_map();
 
-        PRINT("\nCosa vuoi fare?\n");
-        PRINT("\t[1] POSIZIONA NAVE\n\t[2] ELIMINA NAVE\n\t[3] INVIA MAPPA\nScegli: ");
+        PRINT("\nSeleziona un comando: \n\n")
+        PRINT("\t[1] POSIZIONA NAVE\n")
+        PRINT("\t[2] ELIMINA NAVE\n")
+        PRINT("\t[3] INVIA MAPPA\n")
+        PRINT("\nScegli: ")
         retry1:
         scanf("%d", &option);
         if(option<1 || option>3) goto retry1;
         
         switch(option){
             case 1:
-                place_ship(map);
+                place_ship();
                 break;
             case 2:
-                delete_ship(map);
+                delete_ship();
                 break;
             case 3:
-                send_map(map);
+                send_map();
                 break;
             default: break;
 
@@ -65,7 +62,7 @@ void map_initialization(char **map){
 
 }
 
-void send_map(char **map){
+void send_map(void) {
 
     int p=0;
     char *map_encoded=(char *)malloc(MAP_SIZE*MAP_SIZE*sizeof(char));
@@ -88,7 +85,7 @@ void send_map(char **map){
     return;
 }
 
-void delete_ship(char **map){
+void delete_ship(void) {
 
     int choice, i, x, y, dim;
 
@@ -160,7 +157,9 @@ void delete_ship(char **map){
 
 }
 
-void print_map(char **map){
+void print_map(void) {
+
+    clrscr();
 
     int i, j;
 
@@ -193,7 +192,7 @@ void print_map(char **map){
     return;
 }
 
-void place_ship(char **map){
+void place_ship(void) {
 
     int i, dim=0, x, y, choice=0;
     char dir;
@@ -293,3 +292,4 @@ void place_ship(char **map){
     return;
 
 }
+#undef BUFF_LEN

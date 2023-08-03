@@ -19,14 +19,11 @@
  *
 */
 
-#include "../lib/lib.h"
-#include "../config/config.h"
-#include "../lib/client.h"
-#include "../config/map.h"
+#include "client.h"
 
 struct sockaddr_in addr_server;
 int socket_client;
-char **map;
+cell_t **map;
 
 int main(void) {
 
@@ -41,9 +38,9 @@ int main(void) {
 
     clientConnection();                     // CLIENT CONNECTION
 
-    map = (char **) malloc(MAP_SIZE * sizeof(*map));
-    for(i=0; i<MAP_SIZE; i++) map[i] = (char *) malloc(MAP_SIZE * sizeof(*(map[i])));
+    map = (cell_t **) malloc(MAP_SIZE * sizeof(*map));
+    for(i=0; i<MAP_SIZE; i++) map[i] = (cell_t *) malloc(MAP_SIZE * sizeof(*(map[i])));
 
-    map_initialization(map);                //MAP INITIALIZATION
+    mapInitialization();                   //MAP INITIALIZATION
 }
 

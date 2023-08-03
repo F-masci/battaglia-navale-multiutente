@@ -1,7 +1,7 @@
 #pragma once
 
-#include "../lib/lib.h"
-#include "../config/cmd.h"
+#include "../shared/lib.h"
+#include "../shared/cmd.h"
 #include "player.h"
 
 cmd_t wait_cmd(player_t *);

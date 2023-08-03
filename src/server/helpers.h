@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../lib/lib.h"
+#include "../shared/lib.h"
 #include "player.h"
 
 bool wait_string(player_t *, char *);

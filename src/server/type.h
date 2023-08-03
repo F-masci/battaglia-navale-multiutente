@@ -1,7 +1,7 @@
 #pragma once
 
-#include "../lib/lib.h"
-#include "../config/config.h"
+#include "../shared/lib.h"
+#include "../shared/config.h"
 
 typedef char cell_t;
 

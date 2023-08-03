@@ -26,14 +26,14 @@ struct sockaddr_in addr_server;
 
 size_t n_players = 0;                           // Numero di giocatori in lobby
 player_t **players = NULL;                      // Array di puntatori ai metadati dei giocatori
-pthread_t *wthreads;                            // Waiting threads
+pthread_t *w_threads;                            // Waiting threads
 
 int main() {
 
     /* -- INIT GLOBAL VARS -- */
 
     initPlayersArray();
-    wthreads = (pthread_t *) malloc(sizeof(*wthreads) * WAITING_THREADS);
+    w_threads = (pthread_t *) malloc(sizeof(*w_threads) * WAITING_THREADS);
 
     /* -- CONFIG SERVER ADDRESS -- */
 

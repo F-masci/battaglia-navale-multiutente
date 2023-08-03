@@ -1,10 +1,9 @@
 #include "handler.h"
-#include "map.h"
 
 extern size_t n_players;                                // Numero di giocatori in lobby
 extern player_t **players;                              // Array di giocatori
 
-extern pthread_t *wthreads;                             // Waiting threads
+extern pthread_t *w_threads;                             // Waiting threads
 
 #define BUFF_LEN 1024
 void *client_handler(void *socket_addr) {
@@ -46,7 +45,7 @@ handler_loop:
                 }
                 PRINT("[SERVER]: all players ready\n")
                 for(size_t i=0; i<WAITING_THREADS; i++) {
-                    pthread_kill(wthreads[i], SIGUSR1);
+                    pthread_kill(w_threads[i], SIGUSR1);
                 }
                 for(size_t i=0; i<n_players; i++) {
                     send_cmd(players[i], CMD_START_GAME);
@@ -55,10 +54,9 @@ handler_loop:
 
             case CMD_SEND_MAP:
                 wait_string(player, map_encoded);
-                initPlayerMap(player);
                 for(int i=0; i<MAP_SIZE; i++){
                     for(int j=0; j<MAP_SIZE; j++){
-                        player->map->grid[i][j]=map_encoded[p];
+                        player->map->grid[i][j] = map_encoded[p];
                         p++;
                     }
                 }

@@ -2,7 +2,7 @@
 
 extern int socket_server;
 extern struct sockaddr_in addr_server;
-extern pthread_t *wthreads;
+extern pthread_t *w_threads;
 
 static pthread_mutex_t mut[WAITING_THREADS];
 
@@ -68,7 +68,7 @@ void waitConnections(void)
         pthread_mutex_init(&(mut[i]), NULL);
         pthread_mutex_lock(&(mut[i]));
         
-        pthread_create(wthreads+i, NULL, _waiting_thread, (void *) i);
+        pthread_create(w_threads+i, NULL, _waiting_thread, (void *) i);
     }
 
     /* -- UNLOCK FIRST THREAD -- */
