@@ -3,6 +3,8 @@
 #include "../lib/lib.h"
 #include "../config/config.h"
 
+#define MAP_SIZE 10
+
 typedef char cell_t;
 
 typedef struct _ship_t{

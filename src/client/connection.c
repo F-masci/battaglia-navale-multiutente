@@ -3,12 +3,13 @@
 #include "../config/cmd.h"
 
 extern struct sockaddr_in addr_server;
+extern int socket_client;
 
 #define BUFF_LEN 1024
 void clientConnection(void)
 {
 
-    int socket_client = socket(AF_INET, SOCK_STREAM, 0);
+    socket_client = socket(AF_INET, SOCK_STREAM, 0);
     uint8_t cmd;
     char *buffer = (char *)malloc(sizeof(*buffer) * BUFF_LEN);
     char *nickname = NULL;

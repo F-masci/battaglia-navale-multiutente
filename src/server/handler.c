@@ -1,4 +1,5 @@
 #include "handler.h"
+#include "map.h"
 
 bool wait_string(player_t *, char *);
 bool write_string(player_t *, char *);
@@ -15,6 +16,8 @@ void *client_handler(void *socket_addr) {
     hthreads[player->index] = self;
 
     char *buffer = (char *) malloc(sizeof(*buffer) * BUFF_LEN);
+    char *map_encoded=(char *)malloc(sizeof(*map_encoded)*MAP_SIZE*MAP_SIZE);
+    int p=0;
 
 handler_loop:
         cmd = wait_cmd(player);
@@ -51,6 +54,14 @@ handler_loop:
                 break;
 
             case CMD_SEND_MAP:
+                wait_string(player, map_encoded);
+                initPlayerMap(player);
+                for(int i=0; i<MAP_SIZE; i++){
+                    for(int j=0; j<MAP_SIZE; j++){
+                        player->map->grid[i][j]=map_encoded[p];
+                        p++;
+                    }
+                }
                 pthread_exit(NULL);
                 break;
             

@@ -1,5 +1,6 @@
 #include "../lib/lib.h"
 #include "../config/map.h"
+#include "../config/cmd.h"
 
 void print_map(char **map);
 void place_ship(char **map);
@@ -9,6 +10,9 @@ void map_initialization(char **map);
 int size=0;
 ship_t *ships;
 int *c; //counters for how many ships are left to place in the map
+extern int socket_client;
+
+#define BUFF_LEN 1024
 
 void map_initialization(char **map){
 
@@ -50,16 +54,38 @@ void map_initialization(char **map){
                 delete_ship(map);
                 break;
             case 3:
+                send_map(map);
                 break;
             default: break;
 
         }
-
-            
     }
-    
+
     return;
 
+}
+
+void send_map(char **map){
+
+    int p=0;
+    char *map_encoded=(char *)malloc(MAP_SIZE*MAP_SIZE*sizeof(char));
+    char *buffer = (char *)malloc(sizeof(*buffer) * BUFF_LEN);
+    //char *ships_encoded=(char *)malloc(sizeof(ships));
+    
+    for(int i=0; i<MAP_SIZE; i++){
+        for(int j=0; j<MAP_SIZE; j++){
+            sprintf(map_encoded[p], "%c", map[i][j]);
+            p++;
+        }
+    }
+
+    sprintf(buffer, "%hhu", CMD_SEND_MAP);
+    write(socket_client, buffer, strlen(buffer));
+    write(socket_client, map_encoded, strlen(map_encoded));
+    PRINT("\nMappa inviata al server\n");
+    free(map_encoded);
+
+    return;
 }
 
 void delete_ship(char **map){

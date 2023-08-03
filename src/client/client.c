@@ -25,6 +25,7 @@
 #include "../config/map.h"
 
 struct sockaddr_in addr_server;
+int socket_client;
 char **map;
 
 int main(void) {
