@@ -27,14 +27,9 @@
 struct sockaddr_in addr_server;
 char **map;
 
-
 int main(void) {
 
     int i;
-    int c[4]; //counters for how many ships are left to place in the map
-    int choice=-1;
-    int dim=0, x, y;
-    char dir;
 
     /* -- CONFIG SERVER ADDRESS -- */
 
@@ -48,66 +43,6 @@ int main(void) {
     map = (char **) malloc(MAP_SIZE * sizeof(*map));
     for(i=0; i<MAP_SIZE; i++) map[i] = (char *) malloc(MAP_SIZE * sizeof(*(map[i])));
 
-    /* -- MAP INITIALIZATION -- */
-
-    for(i=0; i<MAP_SIZE; i++){
-        for(int j=0; j<MAP_SIZE; j++){
-            map[i][j]=0;
-        }
-    }
-
-    c[0]=DESTROYER;
-    c[1]=SUB;
-    c[2]=BATTLESHIP;
-    c[3]=CARRIER;
-
-    PRINT("\nPOSIZIONARE LE NAVI NELLA MAPPA\n");
-    
-    while(c[0] || c[1] || c[2] || c[3]){
-
-        print_map(map);
-
-        PRINT("\nNavi da posizionare: \n");
-        PRINT("\t[1] %d DESTROYER (DIM 2)\n", c[0]);
-        PRINT("\t[2] %d SUBMARINE (DIM 3)\n", c[1]);
-        PRINT("\t[3] %d BATTLESHIP (DIM 4)\n", c[2]);
-        PRINT("\t[4] %d CARRIER (DIM 5)\n", c[3]);
-
-        //aggiungere controllo input 
-
-        PRINT("Scegli: ");
-        scanf("%d", &choice);
-
-        switch(choice){
-            case 1:
-                dim=2;
-                break;
-            case 2:
-                dim=3;
-                break;
-            case 3: 
-                dim=4;
-                break;
-            case 4:
-                dim=5;
-                break;
-            default: break;
-        }
-
-        //coordinates go from 0 to MAP_SIZE-1
-    retry_choice:
-        PRINT("Scegli coordinate [x, y]: ");
-        scanf("%d %d", &x, &y);
-        while(getchar()!='\n');
-
-        PRINT("Scegli direzione [W/A/S/D]: ");
-        scanf("%c", &dir);
-        while(getchar()!='\n');
-
-        if(place_ship(map, dim, dir, x, y)==-1) goto retry_choice;
-        
-        c[choice-1]--;
-    }
-
+    map_initialization(map);                //MAP INITIALIZATION
 }
 

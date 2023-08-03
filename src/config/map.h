@@ -8,3 +8,10 @@
 #define SUB 3 //dim 3
 #define DESTROYER 3 //dim 2 
 
+typedef struct _ship_t{
+    int dim;
+    int x;
+    int y;
+    char dir;
+} ship_t;
+
