@@ -30,6 +30,11 @@ struct sockaddr_in addr_server;
 size_t n_players = 0;                           // Numero di giocatori in lobby
 player_t **players;                             // Array di puntatori ai metadati dei giocatori
 
+void sig_handler(int sig) {
+    PRINT("Thread exit: %d.\n", gettid())
+    pthread_exit(NULL);
+}
+
 int main() {
 
     /* -- INIT GLOBAL VARS -- */
@@ -43,7 +48,9 @@ int main() {
     addr_server.sin_port = htons(PORT);     // 6500
     addr_server.sin_addr.s_addr = ADDRESS;  // 0.0.0.0
 
-    waitConnections();      // Create lobby
+    signal(SIGINT, sig_handler);
+
+    waitConnections();                      // Create lobby
 
     return 0;
 }

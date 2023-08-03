@@ -1,6 +1,4 @@
-#include "../lib/lib.h"
-#include "../config/cmd.h"
-#include "player.h"
+#include "cmd.h"
 
 #define BUFF_LEN 3 // Massimo numero di cifre di un cmd_t
 cmd_t wait_cmd(player_t *player) {

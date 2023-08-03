@@ -1,5 +1,6 @@
 #pragma once
 
+#define _GNU_SOURCE
 #include <unistd.h>
 #include <sys/types.h>
 #include <sys/socket.h>
@@ -15,6 +16,6 @@
 #include <stdbool.h>
 #include <errno.h>
 
-#define PRINT(...)           \
-    printf(__VA_ARGS__);     \
-    fflush(stdout);
+#define PRINT(...)  { printf(__VA_ARGS__); fflush(stdout); }
+
+#define clrscr() PRINT("\033[1;1H\033[2J")

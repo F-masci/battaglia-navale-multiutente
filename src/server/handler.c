@@ -1,25 +1,18 @@
-#include "../lib/lib.h"
-#include "../config/config.h"
-#include "../config/cmd.h"
 #include "handler.h"
 
 bool wait_string(player_t *, char *);
 bool write_string(player_t *, char *);
 
-extern size_t n_players;                                // Numero di giocatori in lobby
-extern player_t **players;                              // Array di giocatori
-
 #define BUFF_LEN 1024
-void *client_handler(void *args) {
+void *client_handler(void *socket_addr) {
 
-    player_t *player = (player_t *) malloc(sizeof(*player));
-    bzero(player, sizeof(*player));
-    player->socket = *( (int *) args );
-    player->ready = false;
+    player_t *player = createPlayer( *( (int *) socket_addr) );
     addPlayer(player);
     sprintf(player->nickname, "Giocatore %lu", player->index + 1);
 
     cmd_t cmd;
+    pthread_t self = pthread_self();
+    hthreads[player->index] = self;
 
     char *buffer = (char *) malloc(sizeof(*buffer) * BUFF_LEN);
 
@@ -49,9 +42,13 @@ handler_loop:
                     if(players[i]->ready == false) goto handler_loop;
                 }
                 PRINT("Server: all players ready\n")
-                for(size_t i=0; i<n_players; i++) {
-                    send_cmd(players[i], CMD_START_GAME);
+                for(size_t i=0; i<WAITING_THREADS; i++) {
+                    pthread_kill(wthreads[i], SIGINT);
                 }
+                break;
+
+            case CMD_SEND_MAP:
+                pthread_exit(NULL);
                 break;
             
             default: goto handler_exit;

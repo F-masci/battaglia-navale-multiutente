@@ -8,3 +8,6 @@
 
 #define DEFAULT_PLAYERS_LEN 2
 #define NICKNAME_LEN 256
+
+#define MAP_SIZE 10
+#define SHIPS_NUM 8

@@ -1,10 +1,19 @@
-#include "../lib/lib.h"
-#include "../config/config.h"
 #include "player.h"
 
 extern player_t **players;                              // Array di giocatori
 static size_t players_len = DEFAULT_PLAYERS_LEN;        // Lunghezza dell'array dei giocatori
 extern size_t n_players;                                // Numero di giocatori in lobby
+
+player_t *createPlayer(int socket) {
+
+    player_t *player = (player_t *) malloc(sizeof(*player));
+    bzero(player, sizeof(*player));
+    player->socket = socket;
+    player->ready = false;
+    initPlayerMap(player);
+
+    return player;
+}
 
 void *initPlayersArray(void) {
     errno = 0;
@@ -16,7 +25,7 @@ bool addPlayer(player_t *player) {
     errno = 0;
     if(n_players == players_len) {    // Devo aumentare la dimensione dell'array - raddoppio ogni volta la dimensione
         players_len *= 2;
-        players = realloc(players, players_len);
+        players = realloc(players, players_len * sizeof(*players));
         if(players == NULL) return false;
     }
     player->index = n_players;

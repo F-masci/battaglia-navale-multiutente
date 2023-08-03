@@ -5,3 +5,4 @@ obj/*/*
 /client
 .DS_Store
 *.xcodeproj
+debug

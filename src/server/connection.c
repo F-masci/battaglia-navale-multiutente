@@ -1,8 +1,8 @@
-#include "../lib/lib.h"
-#include "../config/config.h"
 #include "connection.h"
 
 pthread_mutex_t mut[WAITING_THREADS];
+pthread_t *wthreads;        // Waiting threads
+pthread_t *hthreads;        // Handler threads
 
 void *waiting_thread(void * args) {
 
@@ -34,11 +34,13 @@ waiting_thread_loop:
 void waitConnections(void)
 {
 
-    pthread_t pid;
+    wthreads = (pthread_t *) malloc(sizeof(*wthreads) * WAITING_THREADS);
+    hthreads = (pthread_t *) malloc(sizeof(*hthreads) * 256);
 
     /* -- STARTING SERVER -- */
 
     socket_server = socket(AF_INET, SOCK_STREAM, 0);
+    setsockopt(socket_server, SOL_SOCKET, SO_REUSEADDR, &(int) {1}, sizeof(int));
     bind(socket_server, (struct sockaddr *) &addr_server, sizeof(addr_server));
     listen(socket_server, PENDING);
 
@@ -49,10 +51,15 @@ void waitConnections(void)
         pthread_mutex_init(&(mut[i]), NULL);
         pthread_mutex_lock(&(mut[i]));
         
-        pthread_create(&pid, NULL, waiting_thread, (void *) i);
+        pthread_create(wthreads+i, NULL, waiting_thread, (void *) i);
     }
 
     pthread_mutex_unlock(&(mut[0]));
+
+    sigset_t set;
+    sigemptyset(&set);
+    sigaddset(&set, SIGINT);
+    sigprocmask(SIG_SETMASK, &set, NULL);
 
     /* -- WAITING -- */
 server_loop:
