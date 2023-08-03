@@ -2,6 +2,6 @@
 
 #include "../lib/lib.h"
 #include "../config/config.h"
-#include "handler.h"
 
-void waitConnections(void);
+#include "connection.h"
+#include "player.h"

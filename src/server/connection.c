@@ -1,10 +1,17 @@
 #include "connection.h"
 
-pthread_mutex_t mut[WAITING_THREADS];
-pthread_t *wthreads;        // Waiting threads
-pthread_t *hthreads;        // Handler threads
+extern int socket_server;
+extern struct sockaddr_in addr_server;
+extern pthread_t *wthreads;
 
-void *waiting_thread(void * args) {
+static pthread_mutex_t mut[WAITING_THREADS];
+
+static void _sigusr1_waiting_handler(int sig, siginfo_t *dummy, void *dummy2) {
+    PRINT("[SERVER]: Waiting thread (%d) exited\n", gettid())
+    pthread_exit(NULL);
+}
+
+static void *_waiting_thread(void * args) {
 
     size_t index = (size_t) args;
     size_t next = (index+1)%WAITING_THREADS;
@@ -18,9 +25,9 @@ void *waiting_thread(void * args) {
 waiting_thread_loop:
 
     pthread_mutex_lock(&(mut[index]));
-    PRINT("Thread %ld: ready to accept\n", index)
+    PRINT("[THREAD %ld]: ready to accept\n", index)
     while ((socket_client = accept(socket_server, (struct sockaddr *) &addr_client, &len_client)) == -1);
-    PRINT("Thread %ld: accepted\n", index)
+    PRINT("[THREAD %ld]: accepted\n", index)
     pthread_mutex_unlock(&(mut[next]));
 
     pthread_create(&pid, NULL, client_handler, (void *) &socket_client);
@@ -34,8 +41,18 @@ waiting_thread_loop:
 void waitConnections(void)
 {
 
-    wthreads = (pthread_t *) malloc(sizeof(*wthreads) * WAITING_THREADS);
-    hthreads = (pthread_t *) malloc(sizeof(*hthreads) * 256);
+    /* -- SETTING SIGNAL -- */
+
+    sigset_t set;
+    sigemptyset(&set);
+    
+    struct sigaction sa;
+    sa.sa_sigaction = _sigusr1_waiting_handler;
+    sa.sa_mask = set;
+    sa.sa_flags = 0;
+    sa.sa_restorer = NULL;
+
+    sigaction(SIGUSR1, &sa, NULL);
 
     /* -- STARTING SERVER -- */
 
@@ -51,17 +68,15 @@ void waitConnections(void)
         pthread_mutex_init(&(mut[i]), NULL);
         pthread_mutex_lock(&(mut[i]));
         
-        pthread_create(wthreads+i, NULL, waiting_thread, (void *) i);
+        pthread_create(wthreads+i, NULL, _waiting_thread, (void *) i);
     }
+
+    /* -- UNLOCK FIRST THREAD -- */
 
     pthread_mutex_unlock(&(mut[0]));
 
-    sigset_t set;
-    sigemptyset(&set);
-    sigaddset(&set, SIGINT);
-    sigprocmask(SIG_SETMASK, &set, NULL);
-
     /* -- WAITING -- */
+
 server_loop:
     pause();
     goto server_loop;
