@@ -1,8 +1,10 @@
 #include "handler.h"
 #include "map.h"
 
-bool wait_string(player_t *, char *);
-bool write_string(player_t *, char *);
+extern size_t n_players;                                // Numero di giocatori in lobby
+extern player_t **players;                              // Array di giocatori
+
+extern pthread_t *wthreads;                             // Waiting threads
 
 #define BUFF_LEN 1024
 void *client_handler(void *socket_addr) {
@@ -12,8 +14,6 @@ void *client_handler(void *socket_addr) {
     sprintf(player->nickname, "Giocatore %lu", player->index + 1);
 
     cmd_t cmd;
-    pthread_t self = pthread_self();
-    hthreads[player->index] = self;
 
     char *buffer = (char *) malloc(sizeof(*buffer) * BUFF_LEN);
     char *map_encoded=(char *)malloc(sizeof(*map_encoded)*MAP_SIZE*MAP_SIZE);
@@ -22,11 +22,11 @@ void *client_handler(void *socket_addr) {
 handler_loop:
         cmd = wait_cmd(player);
         if(cmd == CMD_ERROR) goto handler_exit;
-        PRINT("%s: request command %hu\n", player->nickname, cmd)
+        PRINT("[%s]: request command %hu\n", player->nickname, cmd)
         switch(cmd) {
             case CMD_SET_NICKNAME: 
                 if(wait_string(player, buffer) == false) goto handler_exit;
-                PRINT("%s: set nickname ", player->nickname)
+                PRINT("[%s]: set nickname ", player->nickname)
                 if(setNicknamePlayer(player->index, buffer)) PRINT("%s\n", player->nickname)
                 break;
 
@@ -44,9 +44,9 @@ handler_loop:
                 for(size_t i=0; i<n_players; i++) {
                     if(players[i]->ready == false) goto handler_loop;
                 }
-                PRINT("Server: all players ready\n")
+                PRINT("[SERVER]: all players ready\n")
                 for(size_t i=0; i<WAITING_THREADS; i++) {
-                    pthread_kill(wthreads[i], SIGINT);
+                    pthread_kill(wthreads[i], SIGUSR1);
                 }
                 for(size_t i=0; i<n_players; i++) {
                     send_cmd(players[i], CMD_START_GAME);
@@ -70,28 +70,13 @@ handler_loop:
     goto handler_loop;
 
 handler_exit:
-    PRINT("%s: disconnected\n", player->nickname)
+    PRINT("[%s]: disconnected\n", player->nickname)
     send_cmd(player, CMD_CLOSE_CONNECTION);
     removePlayer(player->index);
     free(player);
     free(buffer);
 
     return NULL;
-
-}
-
-bool wait_string(player_t *player, char *buffer) {
-
-    bzero(buffer, BUFF_LEN);
-    if(read(player->socket, buffer, BUFF_LEN) <= 0) return false;
-    return true;
-
-}
-
-bool write_string(player_t *player, char *buffer) {
-
-    if(write(player->socket, buffer, strlen(buffer)) <= 0)  return false;
-    return true;
 
 }
 #undef BUFF_LEN

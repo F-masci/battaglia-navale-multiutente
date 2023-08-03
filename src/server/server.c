@@ -19,27 +19,21 @@
  *
 */
 
-#include "../lib/lib.h"
-#include "../config/config.h"
-#include "../lib/server.h"
-#include "player.h"
+#include "server.h"
 
 int socket_server;
 struct sockaddr_in addr_server;
 
 size_t n_players = 0;                           // Numero di giocatori in lobby
-player_t **players;                             // Array di puntatori ai metadati dei giocatori
-
-void sig_handler(int sig) {
-    PRINT("Thread exit: %d.\n", gettid())
-    pthread_exit(NULL);
-}
+player_t **players = NULL;                      // Array di puntatori ai metadati dei giocatori
+pthread_t *wthreads;                            // Waiting threads
 
 int main() {
 
     /* -- INIT GLOBAL VARS -- */
 
     initPlayersArray();
+    wthreads = (pthread_t *) malloc(sizeof(*wthreads) * WAITING_THREADS);
 
     /* -- CONFIG SERVER ADDRESS -- */
 
@@ -47,8 +41,6 @@ int main() {
     addr_server.sin_family = AF_INET;
     addr_server.sin_port = htons(PORT);     // 6500
     addr_server.sin_addr.s_addr = ADDRESS;  // 0.0.0.0
-
-    signal(SIGINT, sig_handler);
 
     waitConnections();                      // Create lobby
 
