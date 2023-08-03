@@ -45,6 +45,9 @@ handler_loop:
                 for(size_t i=0; i<WAITING_THREADS; i++) {
                     pthread_kill(wthreads[i], SIGINT);
                 }
+                for(size_t i=0; i<n_players; i++) {
+                    send_cmd(players[i], CMD_START_GAME);
+                }
                 break;
 
             case CMD_SEND_MAP:
