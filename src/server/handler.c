@@ -16,6 +16,7 @@ void *client_handler(void *socket_addr) {
 
     char *buffer = (char *) malloc(sizeof(*buffer) * BUFF_LEN);
     char *map_encoded=(char *)malloc(sizeof(*map_encoded)*MAP_SIZE*MAP_SIZE);
+    char *ships_encoded=(char *)malloc(sizeof(ship_t)*SHIPS_NUM);
     int p=0;
 
 handler_loop:
@@ -54,12 +55,46 @@ handler_loop:
 
             case CMD_SEND_MAP:
                 wait_string(player, map_encoded);
+                wait_string(player, ships_encoded);
+                //initPlayerMap(player);
                 for(int i=0; i<MAP_SIZE; i++){
                     for(int j=0; j<MAP_SIZE; j++){
-                        player->map->grid[i][j] = map_encoded[p];
+                        player->map->grid[i][j]=map_encoded[p];
                         p++;
                     }
                 }
+                /*p=0;
+                for(int k=0; k<SHIPS_NUM; k++){
+                    player->map->ships[k].dim=ships_encoded[p];
+                    player->map->ships[k].x=ships_encoded[++p];
+                    player->map->ships[k].y=ships_encoded[++p];
+                    player->map->ships[k].dir=ships_encoded[++p];
+                    p++;
+                }
+                */
+                PRINT("[%s]: sent map\n", player->nickname);
+                print_map(player->map->grid);
+
+                /*PRINT("\n");
+                for(int i=0; i<SHIPS_NUM; i++){
+                    PRINT("\t[%d] ", i);
+                    switch(player->map->ships[i].dim){
+                        case 2:
+                            PRINT("DESTROYER (%d,%d)\n", player->map->ships[i].x, player->map->ships[i].x);
+                            break;
+                        case 3:
+                            PRINT("SUBMARINE (%d,%d)\n", player->map->ships[i].x, player->map->ships[i].x);
+                            break;
+                        case 4:
+                            PRINT("BATTLESHIP\n");
+                            break;
+                        case 5:
+                            PRINT("CARRIER\n");
+                            break;
+                        default: break;
+                    }
+                }
+                */
                 pthread_exit(NULL);
                 break;
             

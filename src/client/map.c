@@ -19,7 +19,7 @@ void mapInitialization(void) {
     /* --- MAP INITIALIZATION --- */
     for(int i=0; i<MAP_SIZE; i++){
         for(int j=0; j<MAP_SIZE; j++){
-            map[i][j]=0;
+            map[i][j]='0';
         }
     }
 
@@ -67,18 +67,30 @@ void send_map(void) {
     int p=0;
     char *map_encoded=(char *)malloc(MAP_SIZE*MAP_SIZE*sizeof(char));
     char *buffer = (char *)malloc(sizeof(*buffer) * BUFF_LEN);
-    //char *ships_encoded=(char *)malloc(sizeof(ships));
+    char *ships_encoded=(char *)malloc(sizeof(ships));
     
     for(int i=0; i<MAP_SIZE; i++){
         for(int j=0; j<MAP_SIZE; j++){
-            sprintf(map_encoded[p], "%c", map[i][j]);
+            //sprintf(map_encoded+p, "%c", map[i][j]);
+            map_encoded[p]=map[i][j];
             p++;
         }
     }
 
+    p=0;
+    for(int k=0; k<size; k++){
+        sprintf(&ships_encoded[p], "%d", ships[k].dim);
+        sprintf(&ships_encoded[++p], "%d", ships[k].x);
+        sprintf(&ships_encoded[++p], "%d", ships[k].y);
+        ships_encoded[++p]=ships[k].dir;
+        p++;
+    }
+
+    //PRINT("\nships encoded: %s\n", ships_encoded);
     sprintf(buffer, "%hhu", CMD_SEND_MAP);
     write(socket_client, buffer, strlen(buffer));
     write(socket_client, map_encoded, strlen(map_encoded));
+    write(socket_client, ships_encoded, strlen(map_encoded));
     PRINT("\nMappa inviata al server\n");
     free(map_encoded);
 
@@ -127,22 +139,22 @@ void delete_ship(void) {
     switch(ships[choice].dir){
         case 'W':
             for(i=y; i>y-dim; i--){
-                map[i][x]=0;
+                map[i][x]='0';
             }
             break;
         case 'A':
             for(i=x; i>x-dim; i--){
-                map[y][i]=0;
+                map[y][i]='0';
             }
             break;
         case 'S':
             for(i=y; i<y+dim; i++){
-                map[i][x]=0;
+                map[i][x]='0';
             }
             break;
         case 'D':
             for(i=x; i<x+dim; i++){
-                map[y][i]=0;
+                map[y][i]='0';
             }
             break;
         default: break;
@@ -177,10 +189,10 @@ void print_map(void) {
         PRINT(" %d ", i);
         for(j=0; j<MAP_SIZE; j++){
             switch(map[i][j]){
-                case 0:
+                case '0':
                     PRINT("|   ");
                     break;
-                case -1:
+                case '1':
                     PRINT("| X ");
                     break;
                 default: break;
@@ -244,37 +256,37 @@ void place_ship(void) {
             case 'W':
                 if(y-dim<0) goto retry_choice;
                 for(i=0; i<dim; i++){
-                    if(map[y-i][x]==-1) goto retry_choice;
+                    if(map[y-i][x]=='1') goto retry_choice;
                 }
                 for(i=0; i<dim; i++){
-                    map[y-i][x]=-1;
+                    map[y-i][x]='1';
                 }
                 break;
             case 'A':
                 if(x-dim<0) goto retry_choice;
                 for(i=0; i<dim; i++){
-                    if(map[y][x-i]==-1) goto retry_choice;
+                    if(map[y][x-i]=='1') goto retry_choice;
                 }
                 for(i=0; i<dim; i++){
-                    map[y][x-i]=-1;
+                    map[y][x-i]='1';
                 }
                 break;
             case 'S':
                 if(y+dim>MAP_SIZE) goto retry_choice;
                 for(i=0; i<dim; i++){
-                    if(map[y+i][x]==-1) goto retry_choice;
+                    if(map[y+i][x]=='1') goto retry_choice;
                 }
                 for(i=0; i<dim; i++){
-                    map[y+i][x]=-1;
+                    map[y+i][x]='1';
                 }
                 break;
             case 'D':
                 if(x+dim>MAP_SIZE) goto retry_choice;
                 for(i=0; i<dim; i++){
-                    if(map[y][x+i]==-1) goto retry_choice;
+                    if(map[y][x+i]=='1') goto retry_choice;
                 }
                 for(i=0; i<dim; i++){
-                    map[y][x+i]=-1;
+                    map[y][x+i]='1';
                 }
                 break;
             default: break;
