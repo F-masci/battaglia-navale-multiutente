@@ -4,11 +4,18 @@ extern int socket_server;
 extern struct sockaddr_in addr_server;
 extern pthread_t *w_threads;
 
+extern size_t n_players;                                // Numero di giocatori in lobby
+extern player_t **players;                              // Array di giocatori
+
 static pthread_mutex_t mut[WAITING_THREADS];
 
 static void _sigusr1_waiting_handler(int sig, siginfo_t *dummy, void *dummy2) {
     PRINT("[SERVER]: Waiting thread (%d) exited\n", gettid())
     pthread_exit(NULL);
+}
+
+static void _sigusr2_waiting_handler(int sig, siginfo_t *dummy, void *dummy2) {
+    PRINT("[SERVER]: Waiting connection termination check (%d)\n", gettid())
 }
 
 static void *_waiting_thread(void * args) {
@@ -30,7 +37,7 @@ waiting_thread_loop:
     PRINT("[THREAD %ld]: accepted\n", index)
     pthread_mutex_unlock(&(mut[next]));
 
-    pthread_create(&pid, NULL, client_handler, (void *) &socket_client);
+    pthread_create(&pid, NULL, clientHandler, (void *) &socket_client);
 
     goto waiting_thread_loop;
 
@@ -42,17 +49,35 @@ void waitConnections(void)
 {
 
     /* -- SETTING SIGNAL -- */
+    /**
+     * La maschera dei segnali viene impostata sul thread corrente per bloccare tutti i segnali in ingresso eccetto SIGUSR1 e SIGINT.
+     * Questa maschera verrà ereditata da tutti i waiting threads.
+     * La mscherà per il thread corrente verrà modificata per bloccare SIGUSR2 invece di SIGUSR1.
+     * Il segnale SIGUSR1 interrompe i waiting threads mentre il segnale SIGUSR2 terminerà la funzione waitConnections e ritornerà
+     * il controllo al main per il gioco vero e prorpio.
+    */
 
     sigset_t set;
-    sigemptyset(&set);
+    sigfillset(&set);
+    sigdelset(&set, SIGUSR1);
+    sigdelset(&set, SIGINT);
+    sigprocmask(SIG_SETMASK, &set, NULL);
     
     struct sigaction sa;
+    bzero(&sa, sizeof(sa));
     sa.sa_sigaction = _sigusr1_waiting_handler;
     sa.sa_mask = set;
     sa.sa_flags = 0;
     sa.sa_restorer = NULL;
-
     sigaction(SIGUSR1, &sa, NULL);
+
+    sigemptyset(&set);
+    bzero(&sa, sizeof(sa));
+    sa.sa_sigaction = _sigusr2_waiting_handler;
+    sa.sa_mask = set;
+    sa.sa_flags = 0;
+    sa.sa_restorer = NULL;
+    sigaction(SIGUSR2, &sa, NULL);
 
     /* -- STARTING SERVER -- */
 
@@ -75,10 +100,20 @@ void waitConnections(void)
 
     pthread_mutex_unlock(&(mut[0]));
 
-    /* -- WAITING -- */
+    /* -- SETTING SIGNAL MASK -- */
 
-server_loop:
-    pause();
-    goto server_loop;
+    sigfillset(&set);
+    sigdelset(&set, SIGUSR2);
+    sigdelset(&set, SIGINT);
+    sigprocmask(SIG_SETMASK, &set, NULL);
     
+    /* -- WAITING -- */
+    
+waiting_loop:
+    pause();
+    for(size_t i=0; i<n_players; i++) {
+        if(players[i]->ready == false) goto waiting_loop;
+    }
+    PRINT("[SERVER]: Waiting connection terminated\n")
+
 }

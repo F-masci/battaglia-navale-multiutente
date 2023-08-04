@@ -28,8 +28,7 @@ client_connection_loop:
             bzero(buffer, BUFF_LEN);
             switch(cmd) {
                 case 1: 
-                    sprintf(buffer, "%hhu", CMD_SET_NICKNAME);
-                    write(socket_client, buffer, strlen(buffer));
+                    sendCmd(CMD_SET_NICKNAME);
                     PRINT("Nickname: ")
                     scanf("%ms", &nickname);
                     write(socket_client, nickname, strlen(nickname));
@@ -38,8 +37,7 @@ client_connection_loop:
                     break;
 
                 case 2: 
-                    sprintf(buffer, "%hhu", CMD_LIST_PLAYERS);
-                    write(socket_client, buffer, strlen(buffer));
+                    sendCmd(CMD_LIST_PLAYERS);
                     read(socket_client, buffer, BUFF_LEN);
                     nickname = strtok(buffer, ";");
                     PRINT("\n")
@@ -52,11 +50,10 @@ client_connection_loop:
                     break;
 
                 case 3: 
-                    sprintf(buffer, "%hhu", CMD_START_GAME);
-                    write(socket_client, buffer, strlen(buffer));
+                    sendCmd(CMD_START_GAME);
                     PRINT("In attesa degli altri giocatori...\n")
-                    read(socket_client, buffer, BUFF_LEN);
-                    if(strtoul(buffer, NULL, 10) == CMD_START_GAME) return;
+                    cmd = waitCmd();
+                    if(cmd == CMD_START_GAME) return;
                     break;
                 default: goto client_connection_loop;
             }

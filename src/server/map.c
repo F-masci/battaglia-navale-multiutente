@@ -14,23 +14,25 @@ void initPlayerMap(player_t *player) {
 
 }
 
-void print_map(cell_t **map) {
-
-    int i, j;
+void printMap(cell_t **map) {
 
     PRINT("\n    ");
-    for(i=0; i<MAP_SIZE; i++){
+
+    for(cell_t i=0; i<MAP_SIZE; i++){
         PRINT(" %d  ", i);
     }
+
     PRINT("\n    ");
-    for(i=0; i<MAP_SIZE; i++){
+
+    for(cell_t i=0; i<MAP_SIZE; i++){
         PRINT("----");
     }
+
     PRINT("\n");
 
-    for(i=0; i<MAP_SIZE; i++){
+    for(cell_t i=0; i<MAP_SIZE; i++){
         PRINT(" %d ", i);
-        for(j=0; j<MAP_SIZE; j++){
+        for(cell_t j=0; j<MAP_SIZE; j++){
             switch(map[i][j]){
                 case '0':
                     PRINT("|   ");

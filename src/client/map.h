@@ -11,9 +11,7 @@
 #define DESTROYER 3                 // Dim 2 
 
 #include "type.h"
+#include "cmd.h"
 
-void print_map(void);
-void place_ship(void);
-void delete_ship(void);
+void printMap(void);
 void mapInitialization(void);
-void send_map(void);

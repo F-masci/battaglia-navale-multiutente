@@ -5,3 +5,4 @@
 
 #include "connection.h"
 #include "map.h"
+#include "cmd.h"

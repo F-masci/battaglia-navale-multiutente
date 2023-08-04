@@ -3,7 +3,7 @@
 #include "../shared/lib.h"
 #include "../shared/config.h"
 
-typedef char cell_t;
+typedef unsigned char cell_t;
 
 typedef struct _ship_t{
     uint8_t dim;

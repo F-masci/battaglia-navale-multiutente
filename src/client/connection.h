@@ -4,4 +4,6 @@
 #include "../shared/config.h"
 #include "../shared/cmd.h"
 
+#include "cmd.h"
+
 void clientConnection(void);

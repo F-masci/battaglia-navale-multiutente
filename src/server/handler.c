@@ -3,10 +3,11 @@
 extern size_t n_players;                                // Numero di giocatori in lobby
 extern player_t **players;                              // Array di giocatori
 
-extern pthread_t *w_threads;                             // Waiting threads
+extern pthread_t *w_threads;                            // Waiting threads
+extern int semid;
 
 #define BUFF_LEN 1024
-void *client_handler(void *socket_addr) {
+void *clientHandler(void *socket_addr) {
 
     player_t *player = createPlayer( *( (int *) socket_addr) );
     addPlayer(player);
@@ -20,12 +21,12 @@ void *client_handler(void *socket_addr) {
     int p=0;
 
 handler_loop:
-        cmd = wait_cmd(player);
+        cmd = waitCmd(player);
         if(cmd == CMD_ERROR) goto handler_exit;
-        PRINT("[%s]: request command %hu\n", player->nickname, cmd)
+        PRINT("[%s]: request command %hhu\n", player->nickname, cmd)
         switch(cmd) {
             case CMD_SET_NICKNAME: 
-                if(wait_string(player, buffer) == false) goto handler_exit;
+                if(waitString(player, buffer) == false) goto handler_exit;
                 PRINT("[%s]: set nickname ", player->nickname)
                 if(setNicknamePlayer(player->index, buffer)) PRINT("%s\n", player->nickname)
                 break;
@@ -36,7 +37,7 @@ handler_loop:
                     strcat(buffer, players[i]->nickname);
                     strcat(buffer, ";");
                 }
-                write_string(player, buffer);
+                writeString(player, buffer);
                 break;
 
             case CMD_START_GAME:
@@ -44,22 +45,25 @@ handler_loop:
                 for(size_t i=0; i<n_players; i++) {
                     if(players[i]->ready == false) goto handler_loop;
                 }
+
                 PRINT("[SERVER]: all players ready\n")
                 for(size_t i=0; i<WAITING_THREADS; i++) {
                     pthread_kill(w_threads[i], SIGUSR1);
                 }
+                kill(getpid(), SIGUSR2);
+
                 for(size_t i=0; i<n_players; i++) {
-                    send_cmd(players[i], CMD_START_GAME);
+                    sendCmd(players[i], CMD_START_GAME);
                 }
                 break;
 
             case CMD_SEND_MAP:
-                wait_string(player, map_encoded);
-                wait_string(player, ships_encoded);
+                waitString(player, map_encoded);
+                // waitString(player, ships_encoded);
                 //initPlayerMap(player);
                 for(int i=0; i<MAP_SIZE; i++){
                     for(int j=0; j<MAP_SIZE; j++){
-                        player->map->grid[i][j]=map_encoded[p];
+                        player->map->grid[i][j] = map_encoded[p];
                         p++;
                     }
                 }
@@ -72,8 +76,8 @@ handler_loop:
                     p++;
                 }
                 */
-                PRINT("[%s]: sent map\n", player->nickname);
-                print_map(player->map->grid);
+                PRINT("[%s]: Map received\n", player->nickname);
+                printMap(player->map->grid);
 
                 /*PRINT("\n");
                 for(int i=0; i<SHIPS_NUM; i++){
@@ -95,6 +99,14 @@ handler_loop:
                     }
                 }
                 */
+
+                struct sembuf so;
+                bzero(&so, sizeof(so));
+                so.sem_num = 0;
+                so.sem_op = 1;
+                so.sem_flg = 0;
+                semop(semid, &so, 1);
+
                 pthread_exit(NULL);
                 break;
             
@@ -104,7 +116,7 @@ handler_loop:
 
 handler_exit:
     PRINT("[%s]: disconnected\n", player->nickname)
-    send_cmd(player, CMD_CLOSE_CONNECTION);
+    sendCmd(player, CMD_CLOSE_CONNECTION);
     removePlayer(player->index);
     free(player);
     free(buffer);

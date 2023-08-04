@@ -7,4 +7,4 @@
 #include "player.h"
 
 void initPlayerMap(player_t *);
-void print_map(cell_t **map);
+void printMap(cell_t **map);

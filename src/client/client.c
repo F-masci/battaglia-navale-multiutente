@@ -25,6 +25,7 @@ struct sockaddr_in addr_server;
 int socket_client;
 cell_t **map;
 
+#define BUFF_LEN 1024
 int main(void) {
 
     int i;
@@ -42,5 +43,43 @@ int main(void) {
     for(i=0; i<MAP_SIZE; i++) map[i] = (cell_t *) malloc(MAP_SIZE * sizeof(*(map[i])));
 
     mapInitialization();                   //MAP INITIALIZATION
-}
 
+    cmd_t cmd;
+    char *buffer = (char *)malloc(sizeof(*buffer) * BUFF_LEN);
+
+wait_turn:
+
+    cmd = waitCmd();
+    if(cmd != CMD_TURN) goto wait_turn;
+
+    PRINT("È il tuo turno\n")
+
+    PRINT("\nSeleziona un comando:\n\n")
+    PRINT("\t[1] Visualizza mappa giocatore\n")
+    PRINT("\t[2] Invia comando\n\n")
+
+main_loop:
+
+    PRINT("Comando: ")
+    if(scanf("%hhu", &cmd) <= 0) {
+        while((getchar()) != '\n');
+        goto main_loop;
+    }
+
+    bzero(buffer, BUFF_LEN);
+    switch(cmd) {
+        case 1: 
+            sendCmd(CMD_GET_MAP);
+            goto main_loop;
+
+        case 2: 
+            sendCmd(CMD_MOVE);
+            goto wait_turn;
+
+        default: goto main_loop;
+    }
+
+    return 0;
+
+}
+#undef BUFF_LEN

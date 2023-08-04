@@ -5,99 +5,217 @@ extern cell_t **map;
 
 int size=0;
 ship_t *ships;
-int *c; //counters for how many ships are left to place in the map
+uint8_t *c; //counters for how many ships are left to place in the map
+
+static void _place_ship(void);
+static void _delete_ship(void);
+static void _send_map(void);
 
 #define BUFF_LEN 1024
+void printMap(void) {
+
+    clrscr();
+
+    PRINT("\n    ");
+    for(cell_t i=0; i<MAP_SIZE; i++){
+        PRINT(" %d  ", i);
+    }
+    PRINT("\n    ");
+    for(cell_t i=0; i<MAP_SIZE; i++){
+        PRINT("----");
+    }
+    PRINT("\n");
+
+    for(cell_t i=0; i<MAP_SIZE; i++){
+        PRINT(" %d ", i);
+        for(cell_t j=0; j<MAP_SIZE; j++) {
+            switch(map[i][j]){
+                case '0':
+                    PRINT("|   ");
+                    break;
+                case '1':
+                    PRINT("| X ");
+                    break;
+                default: break;
+            }
+        }
+        PRINT("|\n");
+    }
+
+}
+
 void mapInitialization(void) {
 
-    int  option=0;
-    int n=DESTROYER + SUB + BATTLESHIP + CARRIER; //total number of ships
+    uint8_t n = DESTROYER + SUB + BATTLESHIP + CARRIER;                 // Total number of ships
 
-    c=(int *)malloc(4*sizeof(int));
-    ships=(ship_t *)malloc(n*sizeof(ship_t));
+    c = (uint8_t *) malloc( 4 * sizeof(*c));
+    ships = (ship_t *) malloc ( n * sizeof(*ships));
 
-    /* --- MAP INITIALIZATION --- */
+    /* -- MAP INITIALIZATION -- */
+
     for(int i=0; i<MAP_SIZE; i++){
         for(int j=0; j<MAP_SIZE; j++){
             map[i][j]='0';
         }
     }
 
-    c[0]=DESTROYER;
-    c[1]=SUB;
-    c[2]=BATTLESHIP;
-    c[3]=CARRIER;
+    /* -- SHIPS TO PLACE -- */
+
+    c[0] = DESTROYER;
+    c[1] = SUB;
+    c[2] = BATTLESHIP;
+    c[3] = CARRIER;
 
     PRINT("\nPOSIZIONAMENTO DELLE NAVI NELLA MAPPA\n");
 
-    while(option!=3){
+    uint8_t cmd;
 
-        print_map();
+    /* -- LOOP -- */
 
-        PRINT("\nSeleziona un comando: \n\n")
-        PRINT("\t[1] POSIZIONA NAVE\n")
-        PRINT("\t[2] ELIMINA NAVE\n")
-        PRINT("\t[3] INVIA MAPPA\n")
-        PRINT("\nScegli: ")
-        retry1:
-        scanf("%d", &option);
-        if(option<1 || option>3) goto retry1;
-        
-        switch(option){
+map_init_loop:
+
+    printMap();
+
+    PRINT("\nSeleziona un comando: \n\n")
+    PRINT("\t[1] POSIZIONA NAVE\n")
+    PRINT("\t[2] ELIMINA NAVE\n")
+    PRINT("\t[3] INVIA MAPPA\n")
+    PRINT("\nScegli: ")
+    if(scanf("%hhu", &cmd) <= 0) {
+        while((getchar()) != '\n');
+        goto map_init_loop;
+    }
+    
+    switch(cmd) {
+        case 1:
+            _place_ship();
+            break;
+        case 2:
+            _delete_ship();
+            break;
+        case 3:
+            _send_map();
+            return;
+        default: break;
+
+    }
+
+    goto map_init_loop;
+
+    return;
+
+}
+
+static void _place_ship(void) {
+
+    char dir;
+    uint8_t cmd, dim;
+    cell_t x, y;
+
+    if(c[0] || c[1] || c[2] || c[3]) {
+        PRINT("\nNavi da posizionare: \n");
+        PRINT("\t[1] %d DESTROYER (DIM 2)\n", c[0]);
+        PRINT("\t[2] %d SUBMARINE (DIM 3)\n", c[1]);
+        PRINT("\t[3] %d BATTLESHIP (DIM 4)\n", c[2]);
+        PRINT("\t[4] %d CARRIER (DIM 5)\n", c[3]);
+
+place_ship_loop:
+        PRINT("Scegli: ");
+        if(scanf("%hhu", &cmd) <= 0) {
+            while((getchar()) != '\n');
+            goto place_ship_loop;
+        }
+
+        switch(cmd){
             case 1:
-                place_ship();
+                if(c[0]<=0) goto place_ship_loop;
+                dim=2;
                 break;
             case 2:
-                delete_ship();
+                if(c[1]<=0) goto place_ship_loop;
+                dim=3;
                 break;
-            case 3:
-                send_map();
+            case 3: 
+                if(c[2]<=0) goto place_ship_loop;
+                dim=4;
+                break;
+            case 4:
+                if(c[3]<=0) goto place_ship_loop;
+                dim=5;
+                break;
+            default: goto place_ship_loop;
+        }
+
+        //coordinates go from 0 to MAP_SIZE-1
+retry_choice:
+        PRINT("Scegli coordinate [x y]: ");
+        if(scanf("%hhu %hhu", &x, &y) <= 0) {
+            while((getchar()) != '\n');
+            goto retry_choice;
+        }
+        while((getchar()) != '\n');
+
+        PRINT("Scegli direzione [W/A/S/D]: ");
+        if(scanf("%c", &dir) <= 0) {
+            while((getchar()) != '\n');
+            goto retry_choice;
+        }
+        while((getchar()) != '\n');
+
+        switch(dir){
+            case 'W':
+                if(y-dim<0) goto retry_choice;
+                for(cell_t i=0; i<dim; i++){
+                    if(map[y-i][x] == (cell_t) '1') goto retry_choice;
+                }
+                for(cell_t i=0; i<dim; i++){
+                    map[y-i][x] = (cell_t) '1';
+                }
+                break;
+            case 'A':
+                if(x-dim<0) goto retry_choice;
+                for(cell_t i=0; i<dim; i++){
+                    if(map[y][x-i] == (cell_t) '1') goto retry_choice;
+                }
+                for(cell_t i=0; i<dim; i++){
+                    map[y][x-i] = (cell_t) '1';
+                }
+                break;
+            case 'S':
+                if(y+dim>MAP_SIZE) goto retry_choice;
+                for(cell_t i=0; i<dim; i++){
+                    if(map[y+i][x] == (cell_t) '1') goto retry_choice;
+                }
+                for(cell_t i=0; i<dim; i++){
+                    map[y+i][x] = (cell_t) '1';
+                }
+                break;
+            case 'D':
+                if(x+dim>MAP_SIZE) goto retry_choice;
+                for(cell_t i=0; i<dim; i++){
+                    if(map[y][x+i] == (cell_t) '1') goto retry_choice;
+                }
+                for(cell_t i=0; i<dim; i++){
+                    map[y][x+i] = (cell_t) '1';
+                }
                 break;
             default: break;
-
         }
+
+        ships[size].dim=dim;
+        ships[size].x=x;
+        ships[size].y=y;
+        ships[size].dir=dir;
+        size++;
+        c[cmd-1]--;
     }
+    else PRINT("\nNon ci sono più navi da posizionare\n");
 
     return;
 
 }
 
-void send_map(void) {
-
-    int p=0;
-    char *map_encoded=(char *)malloc(MAP_SIZE*MAP_SIZE*sizeof(char));
-    char *buffer = (char *)malloc(sizeof(*buffer) * BUFF_LEN);
-    char *ships_encoded=(char *)malloc(sizeof(ships));
-    
-    for(int i=0; i<MAP_SIZE; i++){
-        for(int j=0; j<MAP_SIZE; j++){
-            //sprintf(map_encoded+p, "%c", map[i][j]);
-            map_encoded[p]=map[i][j];
-            p++;
-        }
-    }
-
-    p=0;
-    for(int k=0; k<size; k++){
-        sprintf(&ships_encoded[p], "%d", ships[k].dim);
-        sprintf(&ships_encoded[++p], "%d", ships[k].x);
-        sprintf(&ships_encoded[++p], "%d", ships[k].y);
-        ships_encoded[++p]=ships[k].dir;
-        p++;
-    }
-
-    //PRINT("\nships encoded: %s\n", ships_encoded);
-    sprintf(buffer, "%hhu", CMD_SEND_MAP);
-    write(socket_client, buffer, strlen(buffer));
-    write(socket_client, map_encoded, strlen(map_encoded));
-    write(socket_client, ships_encoded, strlen(map_encoded));
-    PRINT("\nMappa inviata al server\n");
-    free(map_encoded);
-
-    return;
-}
-
-void delete_ship(void) {
+static void _delete_ship(void) {
 
     int choice, i, x, y, dim;
 
@@ -169,139 +287,44 @@ void delete_ship(void) {
 
 }
 
-void print_map(void) {
+static void _send_map(void) {
 
-    clrscr();
+    sendCmd(CMD_SEND_MAP);
 
-    int i, j;
-
-    PRINT("\n    ");
-    for(i=0; i<MAP_SIZE; i++){
-        PRINT(" %d  ", i);
-    }
-    PRINT("\n    ");
-    for(i=0; i<MAP_SIZE; i++){
-        PRINT("----");
-    }
-    PRINT("\n");
-
-    for(i=0; i<MAP_SIZE; i++){
-        PRINT(" %d ", i);
-        for(j=0; j<MAP_SIZE; j++){
-            switch(map[i][j]){
-                case '0':
-                    PRINT("|   ");
-                    break;
-                case '1':
-                    PRINT("| X ");
-                    break;
-                default: break;
-            }
+    int p=0;
+    char *map_encoded=(char *)malloc(MAP_SIZE*MAP_SIZE*sizeof(char));
+    bzero(map_encoded, MAP_SIZE*MAP_SIZE*sizeof(char));
+    
+    
+    for(int i=0; i<MAP_SIZE; i++){
+        for(int j=0; j<MAP_SIZE; j++){
+            //sprintf(map_encoded+p, "%c", map[i][j]);
+            map_encoded[p]=map[i][j];
+            p++;
         }
-        PRINT("|\n");
     }
+
+    map_encoded[p] = '#';
+    write(socket_client, map_encoded, strlen(map_encoded));
+
+    /*char *ships_encoded=(char *)malloc(sizeof(ships));
+    bzero(ships_encoded, sizeof(ships));
+
+    p=0;
+    for(int k=0; k<size; k++){
+        sprintf(&ships_encoded[p], "%d", ships[k].dim);
+        sprintf(&ships_encoded[++p], "%d", ships[k].x);
+        sprintf(&ships_encoded[++p], "%d", ships[k].y);
+        ships_encoded[++p]=ships[k].dir;
+        p++;
+    }
+
+    //PRINT("\nships encoded: %s\n", ships_encoded);
+    write(socket_client, ships_encoded, strlen(map_encoded));*/
+    PRINT("\nMappa inviata al server\n");
+    free(map_encoded);
 
     return;
 }
 
-void place_ship(void) {
-
-    int i, dim=0, x, y, choice=0;
-    char dir;
-
-    if(c[0] || c[1] || c[2] || c[3]){
-        PRINT("\nNavi da posizionare: \n");
-        PRINT("\t[1] %d DESTROYER (DIM 2)\n", c[0]);
-        PRINT("\t[2] %d SUBMARINE (DIM 3)\n", c[1]);
-        PRINT("\t[3] %d BATTLESHIP (DIM 4)\n", c[2]);
-        PRINT("\t[4] %d CARRIER (DIM 5)\n", c[3]);
-
-        retry2:
-            PRINT("Scegli: ");
-            scanf("%d", &choice);
-            if(choice<1 || choice>4) goto retry2;
-
-            switch(choice){
-                case 1:
-                    if(c[0]<=0) goto retry2;
-                    dim=2;
-                    break;
-                case 2:
-                    if(c[1]<=0) goto retry2;
-                    dim=3;
-                    break;
-                case 3: 
-                    if(c[2]<=0) goto retry2;
-                    dim=4;
-                    break;
-                case 4:
-                    if(c[3]<=0) goto retry2;
-                    dim=5;
-                    break;
-                default: break;
-            }
-
-        //coordinates go from 0 to MAP_SIZE-1
-        retry_choice:
-            PRINT("Scegli coordinate [x y]: ");
-            scanf("%d %d", &x, &y);
-            while(getchar()!='\n');
-
-            PRINT("Scegli direzione [W/A/S/D]: ");
-            scanf("%c", &dir);
-            while(getchar()!='\n');
-
-
-        switch(dir){
-            case 'W':
-                if(y-dim<0) goto retry_choice;
-                for(i=0; i<dim; i++){
-                    if(map[y-i][x]=='1') goto retry_choice;
-                }
-                for(i=0; i<dim; i++){
-                    map[y-i][x]='1';
-                }
-                break;
-            case 'A':
-                if(x-dim<0) goto retry_choice;
-                for(i=0; i<dim; i++){
-                    if(map[y][x-i]=='1') goto retry_choice;
-                }
-                for(i=0; i<dim; i++){
-                    map[y][x-i]='1';
-                }
-                break;
-            case 'S':
-                if(y+dim>MAP_SIZE) goto retry_choice;
-                for(i=0; i<dim; i++){
-                    if(map[y+i][x]=='1') goto retry_choice;
-                }
-                for(i=0; i<dim; i++){
-                    map[y+i][x]='1';
-                }
-                break;
-            case 'D':
-                if(x+dim>MAP_SIZE) goto retry_choice;
-                for(i=0; i<dim; i++){
-                    if(map[y][x+i]=='1') goto retry_choice;
-                }
-                for(i=0; i<dim; i++){
-                    map[y][x+i]='1';
-                }
-                break;
-            default: break;
-        }
-
-        ships[size].dim=dim;
-        ships[size].x=x;
-        ships[size].y=y;
-        ships[size].dir=dir;
-        size++;
-        c[choice-1]--;
-    }
-    else PRINT("\nNon ci sono più navi da posizionare\n");
-
-    return;
-
-}
 #undef BUFF_LEN

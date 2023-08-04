@@ -26,7 +26,8 @@ struct sockaddr_in addr_server;
 
 size_t n_players = 0;                           // Numero di giocatori in lobby
 player_t **players = NULL;                      // Array di puntatori ai metadati dei giocatori
-pthread_t *w_threads;                            // Waiting threads
+pthread_t *w_threads;                           // Waiting threads
+int semid;                                      // Sempahore to sync map receive
 
 int main() {
 
@@ -34,6 +35,7 @@ int main() {
 
     initPlayersArray();
     w_threads = (pthread_t *) malloc(sizeof(*w_threads) * WAITING_THREADS);
+    semid = semget(IPC_PRIVATE, 1, IPC_CREAT | 0600);
 
     /* -- CONFIG SERVER ADDRESS -- */
 
@@ -44,5 +46,48 @@ int main() {
 
     waitConnections();                      // Create lobby
 
-    return 0;
+    /* -- WAITING FOR ALL MAPS -- */
+
+    semctl(semid, (int) 0, SETVAL, 0);
+
+    struct sembuf so;
+    bzero(&so, sizeof(so));
+    so.sem_num = 0;
+    so.sem_op = -n_players;
+    so.sem_flg = 0;
+    semop(semid, &so, 1);
+
+    PRINT("[SERVER] All map configured\n")
+
+    /* -- GAME -- */
+
+    size_t index = 0;
+    cmd_t cmd;
+
+main_loop:
+
+    // Start player turn
+    sendCmd(players[index], CMD_TURN);
+
+main_cmd_loop:
+    cmd = waitCmd(players[index]);
+    PRINT("[%s]: request command %hu\n", players[index]->nickname, cmd)
+    switch(cmd) {
+
+        case CMD_GET_MAP: 
+            goto main_cmd_loop;
+
+        case CMD_MOVE:
+            break;
+
+        case CMD_ERROR:
+            return EXIT_FAILURE;
+
+        default: goto main_cmd_loop;
+    }
+
+    index = (index+1)%n_players;
+    goto main_loop;
+
+    return EXIT_SUCCESS;
 }
