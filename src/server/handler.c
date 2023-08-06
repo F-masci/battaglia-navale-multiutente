@@ -16,8 +16,6 @@ void *clientHandler(void *socket_addr) {
     cmd_t cmd;
 
     char *buffer = (char *) malloc(sizeof(*buffer) * BUFF_LEN);
-    char *ships_encoded=(char *)malloc(sizeof(ship_t)*SHIPS_NUM);
-    int p=0;
 
 handler_loop:
         cmd = waitCmd(player);
@@ -57,19 +55,18 @@ handler_loop:
                 break;
 
             case CMD_SEND_MAP:
-                waitString(player, ships_encoded);
-
-                for(int k=0; k<SHIPS_NUM; k++){
-                    player->map->ships[k].dim=(uint8_t)ships_encoded[p]-'0';
-                    player->map->ships[k].x=(uint8_t)ships_encoded[++p]-'0';
-                    player->map->ships[k].y=(uint8_t)ships_encoded[++p]-'0';
-                    player->map->ships[k].dir=ships_encoded[++p];
-                    p++;
+                waitString(player, buffer);
+                char *cur = buffer;
+                for(int k=0; k<SHIPS_NUM; k++) {
+                    player->map->ships[k].dim = (uint8_t) *cur++ - '0';
+                    player->map->ships[k].x = (uint8_t) *cur++ - '0';
+                    player->map->ships[k].y = (uint8_t) *cur++ - '0';
+                    player->map->ships[k].dir = *cur++;
                 }
-                
+
                 makeMap(player);
                 PRINT("[%s]: Map received\n", player->nickname);
-                
+
                 struct sembuf so;
                 bzero(&so, sizeof(so));
                 so.sem_num = 0;

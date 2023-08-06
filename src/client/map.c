@@ -6,6 +6,7 @@ extern cell_t **map;
 int size=0;
 ship_t *ships;
 uint8_t *c; //counters for how many ships are left to place in the map
+uint8_t n;  // Total number of ships
 
 static void _place_ship(void);
 static void _delete_ship(void);
@@ -50,7 +51,7 @@ void printMap(void) {
 
 void mapInitialization(void) {
 
-    uint8_t n = DESTROYER + SUB + BATTLESHIP + CARRIER;                 // Total number of ships
+    n = DESTROYER + SUB + BATTLESHIP + CARRIER;
 
     c = (uint8_t *) malloc( 4 * sizeof(*c));
     ships = (ship_t *) malloc ( n * sizeof(*ships));
@@ -59,7 +60,7 @@ void mapInitialization(void) {
 
     for(int i=0; i<MAP_SIZE; i++){
         for(int j=0; j<MAP_SIZE; j++){
-            map[i][j]='0';
+            map[i][j] = '0';
         }
     }
 
@@ -98,11 +99,13 @@ map_init_loop:
             _delete_ship();
             break;
         case 3:
-            if(size==SHIPS_NUM){
+            if(size == SHIPS_NUM) {
                 _send_map();
                 return;
+            } else {
+                PRINT("Inserisci prima tutte le navi\n")
+                break;
             }
-            else break;
         default: break;
 
     }
@@ -172,47 +175,47 @@ retry_choice:
         switch(dir){
             case 'W':
                 if(y-dim<0) goto retry_choice;
-                for(cell_t i=0; i<dim; i++){
+                for(uint8_t i=0; i<dim; i++){
                     if(map[y-i][x] == (cell_t) '1') goto retry_choice;
                 }
-                for(cell_t i=0; i<dim; i++){
+                for(uint8_t i=0; i<dim; i++){
                     map[y-i][x] = (cell_t) '1';
                 }
                 break;
             case 'A':
                 if(x-dim<0) goto retry_choice;
-                for(cell_t i=0; i<dim; i++){
+                for(uint8_t i=0; i<dim; i++){
                     if(map[y][x-i] == (cell_t) '1') goto retry_choice;
                 }
-                for(cell_t i=0; i<dim; i++){
+                for(uint8_t i=0; i<dim; i++){
                     map[y][x-i] = (cell_t) '1';
                 }
                 break;
             case 'S':
                 if(y+dim>MAP_SIZE) goto retry_choice;
-                for(cell_t i=0; i<dim; i++){
+                for(uint8_t i=0; i<dim; i++){
                     if(map[y+i][x] == (cell_t) '1') goto retry_choice;
                 }
-                for(cell_t i=0; i<dim; i++){
+                for(uint8_t i=0; i<dim; i++){
                     map[y+i][x] = (cell_t) '1';
                 }
                 break;
             case 'D':
                 if(x+dim>MAP_SIZE) goto retry_choice;
-                for(cell_t i=0; i<dim; i++){
+                for(uint8_t i=0; i<dim; i++){
                     if(map[y][x+i] == (cell_t) '1') goto retry_choice;
                 }
-                for(cell_t i=0; i<dim; i++){
+                for(uint8_t i=0; i<dim; i++){
                     map[y][x+i] = (cell_t) '1';
                 }
                 break;
             default: break;
         }
 
-        ships[size].dim=dim;
-        ships[size].x=x;
-        ships[size].y=y;
-        ships[size].dir=dir;
+        ships[size].dim = dim;
+        ships[size].x = x;
+        ships[size].y = y;
+        ships[size].dir = dir;
         size++;
         c[cmd-1]--;
     }
@@ -298,18 +301,19 @@ static void _send_map(void) {
 
     sendCmd(CMD_SEND_MAP);
 
-    int p=0;
-    
-    char *ships_encoded=(char *)malloc(sizeof(ships));
-    bzero(ships_encoded, sizeof(ships));
+    char *ships_encoded = (char *) malloc( n * sizeof(*ships) + 1);        // Calcolo lo spazio di cui ho bisogno per rappresentare le navi + il terminatore
+    bzero(ships_encoded, sizeof(*ships_encoded));
+
+    char *cur = ships_encoded;
 
     for(int k=0; k<size; k++){
-        sprintf(&ships_encoded[p], "%d", ships[k].dim);
-        sprintf(&ships_encoded[++p], "%d", ships[k].x);
-        sprintf(&ships_encoded[++p], "%d", ships[k].y);
-        ships_encoded[++p]=ships[k].dir;
-        p++;
+        *cur++ = '0' + ships[k].dim;
+        *cur++ = '0' + ships[k].x;
+        *cur++ = '0' + ships[k].y;
+        *cur++ = ships[k].dir;
     }
+
+    *cur = 0;   // Inserisco il terminatore
 
     write(socket_client, ships_encoded, strlen(ships_encoded));
     PRINT("\nMappa inviata al server\n");
