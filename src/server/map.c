@@ -40,6 +40,9 @@ void printMap(cell_t **map) {
                 case '1':
                     PRINT("| X ");
                     break;
+                case '2':
+                    PRINT("| K ");
+                    break;
                 default: break;
             }
         }
@@ -47,4 +50,53 @@ void printMap(cell_t **map) {
     }
 
     return;
+}
+
+void makeMap(player_t *player){
+
+    /* --- MAP INITIALIZATION --- */
+
+    int i, j;
+    uint8_t x, y, dim;
+    
+    for(i=0; i<MAP_SIZE; i++){
+        for(j=0; j<MAP_SIZE; j++){
+            player->map->grid[i][j]='0';
+        }
+    }
+
+    /* --- MAP RECONSTRUCTION FROM SHIPS --- */
+
+    for(int k=0; k<SHIPS_NUM; k++){
+        x=player->map->ships[k].x;
+        y=player->map->ships[k].y;
+        dim=player->map->ships[k].dim;
+
+        switch(player->map->ships[k].dir){
+            case 'W':
+                for(i=y; i>y-dim; i--){
+                    player->map->grid[i][x]='1';
+                }
+                break;
+            case 'A':
+                for(i=x; i>x-dim; i--){
+                    player->map->grid[y][i]='1';
+                }
+                break;
+            case 'S':
+                for(i=y; i<y+dim; i++){
+                    player->map->grid[i][x]='1';
+                }
+                break;
+            case 'D':
+                for(i=x; i<x+dim; i++){
+                    player->map->grid[y][i]='1';
+                }
+                break;
+            default: break;
+        }
+    }
+
+    return;
+
 }

@@ -16,7 +16,6 @@ void *clientHandler(void *socket_addr) {
     cmd_t cmd;
 
     char *buffer = (char *) malloc(sizeof(*buffer) * BUFF_LEN);
-    char *map_encoded=(char *)malloc(sizeof(*map_encoded)*MAP_SIZE*MAP_SIZE);
     char *ships_encoded=(char *)malloc(sizeof(ship_t)*SHIPS_NUM);
     int p=0;
 
@@ -58,48 +57,19 @@ handler_loop:
                 break;
 
             case CMD_SEND_MAP:
-                waitString(player, map_encoded);
-                // waitString(player, ships_encoded);
-                //initPlayerMap(player);
-                for(int i=0; i<MAP_SIZE; i++){
-                    for(int j=0; j<MAP_SIZE; j++){
-                        player->map->grid[i][j] = map_encoded[p];
-                        p++;
-                    }
-                }
-                /*p=0;
+                waitString(player, ships_encoded);
+
                 for(int k=0; k<SHIPS_NUM; k++){
-                    player->map->ships[k].dim=ships_encoded[p];
-                    player->map->ships[k].x=ships_encoded[++p];
-                    player->map->ships[k].y=ships_encoded[++p];
+                    player->map->ships[k].dim=(uint8_t)ships_encoded[p]-'0';
+                    player->map->ships[k].x=(uint8_t)ships_encoded[++p]-'0';
+                    player->map->ships[k].y=(uint8_t)ships_encoded[++p]-'0';
                     player->map->ships[k].dir=ships_encoded[++p];
                     p++;
                 }
-                */
+                
+                makeMap(player);
                 PRINT("[%s]: Map received\n", player->nickname);
-                printMap(player->map->grid);
-
-                /*PRINT("\n");
-                for(int i=0; i<SHIPS_NUM; i++){
-                    PRINT("\t[%d] ", i);
-                    switch(player->map->ships[i].dim){
-                        case 2:
-                            PRINT("DESTROYER (%d,%d)\n", player->map->ships[i].x, player->map->ships[i].x);
-                            break;
-                        case 3:
-                            PRINT("SUBMARINE (%d,%d)\n", player->map->ships[i].x, player->map->ships[i].x);
-                            break;
-                        case 4:
-                            PRINT("BATTLESHIP\n");
-                            break;
-                        case 5:
-                            PRINT("CARRIER\n");
-                            break;
-                        default: break;
-                    }
-                }
-                */
-
+                
                 struct sembuf so;
                 bzero(&so, sizeof(so));
                 so.sem_num = 0;

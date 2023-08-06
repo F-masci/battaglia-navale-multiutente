@@ -45,7 +45,7 @@ int main(void) {
     mapInitialization();                   //MAP INITIALIZATION
 
     cmd_t cmd;
-    char *buffer = (char *)malloc(sizeof(*buffer) * BUFF_LEN);
+    char *buffer = (char *)malloc(sizeof(char) * BUFF_LEN);
 
 wait_turn:
 

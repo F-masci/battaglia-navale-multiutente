@@ -8,3 +8,4 @@
 
 void initPlayerMap(player_t *);
 void printMap(cell_t **map);
+void makeMap(player_t *);

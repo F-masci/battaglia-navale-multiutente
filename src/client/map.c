@@ -41,6 +41,10 @@ void printMap(void) {
         }
         PRINT("|\n");
     }
+    PRINT("    ");
+    for(cell_t i=0; i<MAP_SIZE; i++){
+        PRINT("----");
+    }
 
 }
 
@@ -94,8 +98,11 @@ map_init_loop:
             _delete_ship();
             break;
         case 3:
-            _send_map();
-            return;
+            if(size==SHIPS_NUM){
+                _send_map();
+                return;
+            }
+            else break;
         default: break;
 
     }
@@ -292,25 +299,10 @@ static void _send_map(void) {
     sendCmd(CMD_SEND_MAP);
 
     int p=0;
-    char *map_encoded=(char *)malloc(MAP_SIZE*MAP_SIZE*sizeof(char));
-    bzero(map_encoded, MAP_SIZE*MAP_SIZE*sizeof(char));
     
-    
-    for(int i=0; i<MAP_SIZE; i++){
-        for(int j=0; j<MAP_SIZE; j++){
-            //sprintf(map_encoded+p, "%c", map[i][j]);
-            map_encoded[p]=map[i][j];
-            p++;
-        }
-    }
-
-    map_encoded[p] = '#';
-    write(socket_client, map_encoded, strlen(map_encoded));
-
-    /*char *ships_encoded=(char *)malloc(sizeof(ships));
+    char *ships_encoded=(char *)malloc(sizeof(ships));
     bzero(ships_encoded, sizeof(ships));
 
-    p=0;
     for(int k=0; k<size; k++){
         sprintf(&ships_encoded[p], "%d", ships[k].dim);
         sprintf(&ships_encoded[++p], "%d", ships[k].x);
@@ -319,10 +311,9 @@ static void _send_map(void) {
         p++;
     }
 
-    //PRINT("\nships encoded: %s\n", ships_encoded);
-    write(socket_client, ships_encoded, strlen(map_encoded));*/
+    write(socket_client, ships_encoded, strlen(ships_encoded));
     PRINT("\nMappa inviata al server\n");
-    free(map_encoded);
+    free(ships_encoded);
 
     return;
 }
