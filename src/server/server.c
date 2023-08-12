@@ -75,6 +75,7 @@ main_cmd_loop:
     switch(cmd) {
 
         case CMD_GET_MAP: 
+            send_maps(players[index], index);
             goto main_cmd_loop;
 
         case CMD_MOVE:

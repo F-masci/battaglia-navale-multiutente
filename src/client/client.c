@@ -20,6 +20,7 @@
 */
 
 #include "client.h"
+#include "game.h"
 
 struct sockaddr_in addr_server;
 int socket_client;
@@ -55,7 +56,7 @@ wait_turn:
     PRINT("È il tuo turno\n")
 
     PRINT("\nSeleziona un comando:\n\n")
-    PRINT("\t[1] Visualizza mappa giocatore\n")
+    PRINT("\t[1] Visualizza mappe giocatori\n")
     PRINT("\t[2] Invia comando\n\n")
 
 main_loop:
@@ -70,6 +71,7 @@ main_loop:
     switch(cmd) {
         case 1: 
             sendCmd(CMD_GET_MAP);
+            print_maps();
             goto main_loop;
 
         case 2: 

@@ -2,7 +2,6 @@
 
 #include "../shared/lib.h"
 #include "../shared/config.h"
+#include "helpers.h"
 
-#include "connection.h"
-#include "player.h"
-#include "game.h"
+void send_maps(player_t *player, size_t index);

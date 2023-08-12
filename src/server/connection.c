@@ -52,9 +52,9 @@ void waitConnections(void)
     /**
      * La maschera dei segnali viene impostata sul thread corrente per bloccare tutti i segnali in ingresso eccetto SIGUSR1 e SIGINT.
      * Questa maschera verrà ereditata da tutti i waiting threads.
-     * La mscherà per il thread corrente verrà modificata per bloccare SIGUSR2 invece di SIGUSR1.
+     * La maschera per il thread corrente verrà modificata per bloccare SIGUSR2 invece di SIGUSR1.
      * Il segnale SIGUSR1 interrompe i waiting threads mentre il segnale SIGUSR2 terminerà la funzione waitConnections e ritornerà
-     * il controllo al main per il gioco vero e prorpio.
+     * il controllo al main per il gioco vero e proprio.
     */
 
     sigset_t set;

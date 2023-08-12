@@ -18,6 +18,7 @@
 #include <string.h>
 #include <stdbool.h>
 #include <errno.h>
+#include <ctype.h>
 
 #define PRINT(...)  { printf(__VA_ARGS__); fflush(stdout); }
 

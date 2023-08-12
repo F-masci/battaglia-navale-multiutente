@@ -37,6 +37,9 @@ void printMap(void) {
                 case '1':
                     PRINT("| X ");
                     break;
+                case '2':
+                    PRINT("| K ");
+                    break;
                 default: break;
             }
         }
@@ -172,7 +175,7 @@ retry_choice:
         }
         while((getchar()) != '\n');
 
-        switch(dir){
+        switch(toupper(dir)){
             case 'W':
                 if(y-dim<0) goto retry_choice;
                 for(uint8_t i=0; i<dim; i++){
@@ -215,7 +218,7 @@ retry_choice:
         ships[size].dim = dim;
         ships[size].x = x;
         ships[size].y = y;
-        ships[size].dir = dir;
+        ships[size].dir = toupper(dir);
         size++;
         c[cmd-1]--;
     }
