@@ -45,6 +45,8 @@ int main(void) {
 
     mapInitialization();                   //MAP INITIALIZATION
 
+    gameInitialization();                  //INITIALIZATION OF DATA NEEDED FOR THE GAME
+    
     cmd_t cmd;
     char *buffer = (char *)malloc(sizeof(char) * BUFF_LEN);
 
@@ -55,11 +57,12 @@ wait_turn:
 
     PRINT("È il tuo turno\n")
 
+main_loop:
+
     PRINT("\nSeleziona un comando:\n\n")
     PRINT("\t[1] Visualizza mappe giocatori\n")
-    PRINT("\t[2] Invia comando\n\n")
-
-main_loop:
+    PRINT("\t[2] Visualizza una mappa\n")
+    PRINT("\t[3] Invia comando\n\n")
 
     PRINT("Comando: ")
     if(scanf("%hhu", &cmd) <= 0) {
@@ -70,11 +73,16 @@ main_loop:
     bzero(buffer, BUFF_LEN);
     switch(cmd) {
         case 1: 
-            sendCmd(CMD_GET_MAP);
+            sendCmd(CMD_GET_MAPS);
             print_maps();
             goto main_loop;
 
-        case 2: 
+        case 2:
+            sendCmd(CMD_GET_MAP);
+            print_map();
+            goto main_loop;
+
+        case 3: 
             sendCmd(CMD_MOVE);
             goto wait_turn;
 

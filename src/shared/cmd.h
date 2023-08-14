@@ -10,5 +10,6 @@ typedef uint8_t cmd_t;
 #define CMD_SEND_MAP 5
 
 #define CMD_TURN 6
-#define CMD_GET_MAP 7
-#define CMD_MOVE 8
+#define CMD_GET_MAPS 7
+#define CMD_GET_MAP 8
+#define CMD_MOVE 9

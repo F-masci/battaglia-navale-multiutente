@@ -61,6 +61,10 @@ int main() {
 
     /* -- GAME -- */
 
+    gameInitialization();               //INITIALIZATION
+
+    PRINT("[SERVER] Game initialization done\n")
+
     size_t index = 0;
     cmd_t cmd;
 
@@ -74,8 +78,12 @@ main_cmd_loop:
     PRINT("[%s]: request command %hu\n", players[index]->nickname, cmd)
     switch(cmd) {
 
-        case CMD_GET_MAP: 
+        case CMD_GET_MAPS: 
             send_maps(players[index], index);
+            goto main_cmd_loop;
+
+        case CMD_GET_MAP:
+            send_map(players[index]);
             goto main_cmd_loop;
 
         case CMD_MOVE:

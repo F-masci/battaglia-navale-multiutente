@@ -3,9 +3,9 @@
 extern size_t n_players;
 extern player_t **players;
 
-void send_maps(player_t *player, size_t index){
+void gameInitialization(void){
 
-    char *encoded=(char *) malloc((n_players + (n_players * MAP_SIZE * MAP_SIZE) + (n_players * 255) + 2) * sizeof(char));
+    char *encoded = (char *) malloc((n_players + (n_players * 255) + 3) * sizeof(char));
     bzero(encoded, sizeof(*encoded));
 
     char *cur = encoded;
@@ -17,6 +17,22 @@ void send_maps(player_t *player, size_t index){
         }
         *cur++=';';
     }
+
+    for(size_t i=0; i<n_players; i++){
+        *cur = '0' + i;
+        writeString(players[i], encoded);
+    }
+    
+    return;
+
+}
+
+void send_maps(player_t *player, size_t index){
+
+    char *encoded=(char *) malloc((n_players + (n_players * MAP_SIZE * MAP_SIZE) + 1) * sizeof(char));
+    bzero(encoded, sizeof(*encoded));
+
+    char *cur = encoded;
 
     for(size_t i=0; i<n_players; i++){
         if(i!=index){
@@ -35,4 +51,30 @@ void send_maps(player_t *player, size_t index){
 
     writeString(player, encoded);
     return;
+}
+
+void send_map(player_t *player){
+
+    char *buffer=(char *) malloc(sizeof(char));
+    char *map_encoded = (char *) malloc((MAP_SIZE * MAP_SIZE + 1) * sizeof(char));
+    bzero(map_encoded, sizeof(*map_encoded));
+    bzero(buffer, sizeof(*buffer));
+    
+    waitString(player, buffer);
+
+    uint8_t ind = (buffer[0] - '0') - 1;
+    char *cur = map_encoded;
+
+    for(int j=0; j<MAP_SIZE; j++){
+        for(int k=0; k<MAP_SIZE; k++){
+            *cur++=players[ind]->map->grid[j][k];
+        }
+    }
+    *cur = '\0';
+
+    writeString(player, map_encoded);
+    free(map_encoded);
+    free(buffer);
+    return;
+
 }
