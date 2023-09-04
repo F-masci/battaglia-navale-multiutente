@@ -27,6 +27,26 @@ void gameInitialization(void){
 
 }
 
+void get_move(player_t *player){
+
+    uint8_t index, x, y;
+
+    char *encoded_move = (char *) malloc(4 * sizeof(char)); 
+    bzero(encoded_move, sizeof(*encoded_move));
+
+    waitString(player, encoded_move);
+
+    index = encoded_move[0] - '0';
+    x = encoded_move[1] - '0';
+    y = encoded_move[2] - '0';
+
+    if(players[index]->map->grid[y][x] == '1'){
+        players[index]->map->grid[y][x] = '2';
+    }
+
+    return;
+}
+
 void send_maps(player_t *player, size_t index){
 
     char *encoded=(char *) malloc((n_players + (n_players * MAP_SIZE * MAP_SIZE) + 1) * sizeof(char));
@@ -50,6 +70,7 @@ void send_maps(player_t *player, size_t index){
     *cur='\0';
 
     writeString(player, encoded);
+    free(encoded);
     return;
 }
 

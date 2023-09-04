@@ -44,9 +44,9 @@ int main(void) {
     for(i=0; i<MAP_SIZE; i++) map[i] = (cell_t *) malloc(MAP_SIZE * sizeof(*(map[i])));
 
     mapInitialization();                   //MAP INITIALIZATION
-
-    gameInitialization();                  //INITIALIZATION OF DATA NEEDED FOR THE GAME
     
+    gameInitialization();                  //INITIALIZATION OF DATA NEEDED FOR THE GAME
+
     cmd_t cmd;
     char *buffer = (char *)malloc(sizeof(char) * BUFF_LEN);
 
@@ -84,6 +84,7 @@ main_loop:
 
         case 3: 
             sendCmd(CMD_MOVE);
+            make_move();
             goto wait_turn;
 
         default: goto main_loop;

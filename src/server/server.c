@@ -87,6 +87,7 @@ main_cmd_loop:
             goto main_cmd_loop;
 
         case CMD_MOVE:
+            get_move(players[index]);
             break;
 
         case CMD_ERROR:

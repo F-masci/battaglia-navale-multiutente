@@ -1,6 +1,6 @@
 #include "game.h"
 
-extern socket_client;
+extern int socket_client;
 
 char **nicknames; 
 size_t num; //total number of players
@@ -13,17 +13,17 @@ void gameInitialization(void){
     bzero(encoded, sizeof(*encoded));
 
     read(socket_client, encoded, BUFF_LEN);
-    
+
     num = encoded[0] - '0'; 
 
     nicknames = (char **) malloc(num * sizeof(char *));
-    for(int i=0; i<num; i++){
+    for(size_t i=0; i<num; i++){
         nicknames[i] = (char *) malloc(255 * sizeof(char));
     }
 
     char *cur = encoded+1;
     char *token;
-    int p = 0;
+    size_t p = 0;
     int len=0;
 
     token=strtok(cur, ";");
@@ -41,14 +41,52 @@ void gameInitialization(void){
 
 }
 
+void make_move(void){
+
+    char *encoded_move = (char *) malloc(4 * sizeof(char)); 
+    bzero(encoded_move, sizeof(*encoded_move));
+
+    uint8_t x, y;
+
+    char *cur = encoded_move;
+
+    *cur++ = '0' + (choose_player() - 1);
+
+    //mental note: check coordinates values
+
+    PRINT("\nCoordinata x: ");
+retry:
+    if(scanf("%hhu", &x)<=0){
+        while((getchar()) != '\n');
+        goto retry;
+    }
+
+    *cur++ = '0' + x;
+
+    PRINT("\nCoordinata y: ");
+retry:
+    if(scanf("%hhu", &y)<=0){
+        while((getchar()) != '\n');
+        goto retry;
+    }
+
+    *cur++ = '0' + y;
+    *cur = '\0';
+
+    write(socket_client, encoded_move, sizeof(encoded_move));
+
+    return;
+
+}
+
 uint8_t choose_player(void){
     uint8_t ind;
     
     PRINT("\nScegli giocatore: \n\n");
 
     for(size_t i=0; i<num; i++){
-        if(i==me) PRINT("\t[%d] TU - %s\n", i+1, nicknames[i])
-        else PRINT("\t[%d] %s\n", i+1, nicknames[i]);
+        if(i==me) PRINT("\t[%ld] TU - %s\n", i+1, nicknames[i])
+        else PRINT("\t[%ld] %s\n", i+1, nicknames[i]);
     }
 
     PRINT("\nGiocatore: ");
@@ -75,7 +113,7 @@ void print_maps(void){
         if(*cur++ == 'M'){
             PRINT("\n[LA TUA MAPPA] %s\n", nicknames[j]);
         }
-        else PRINT("\n[GIOCATORE %d] %s\n", j+1, nicknames[j]); 
+        else PRINT("\n[GIOCATORE %ld] %s\n", j+1, nicknames[j]); 
 
         PRINT("\n    ");
         for(int i=0; i<MAP_SIZE; i++){
@@ -126,7 +164,6 @@ void print_map(void){
     write(socket_client, &ind, 1);
 
     read(socket_client, encoded, BUFF_LEN);
-    PRINT("%s\n", encoded);
 
     char *cur = encoded;
 
