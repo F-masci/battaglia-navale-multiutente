@@ -5,6 +5,7 @@ bool waitNum(player_t *player, uint32_t *ptr) {
 
     if(recv(player->socket, ptr, sizeof(*ptr), MSG_WAITALL) < (ssize_t) sizeof(*ptr)) return false;
     *ptr = ntohl(*ptr);
+    DEBUG("[DEBUG]: Received %d\n", *ptr)
     return true;
 
 }

@@ -1,31 +1,28 @@
 #include "game.h"
 
-extern size_t n_players;
+extern uint8_t n_players;
 extern player_t **players;
 
 #define INDEX_LEN 3
 void gameInitialization(void){
 
     size_t nick_len;
-    size_t buff_len = n_players + (n_players * (NICKNAME_LEN-1)) + INDEX_LEN;
-    char *encoded = (char *) malloc(buff_len * sizeof(char));
-    bzero(encoded, sizeof(*encoded) * buff_len);
+    char *encoded = (char *) malloc(n_players * NICKNAME_LEN * sizeof(char));
+    bzero(encoded, sizeof(*encoded) * n_players * NICKNAME_LEN);
 
     char *cur = encoded;
-    *cur++ = '0' + n_players;
 
-    for(size_t i=0; i<n_players; i++){
+    for(uint8_t i=0; i<n_players; i++){
         nick_len = strlen(players[i]->nickname);
         memcpy(cur, players[i]->nickname, nick_len);
         cur += nick_len;
         *cur++=';';
     }
 
-    for(size_t i=0; i<n_players; i++){
-        *cur = '0' + i;
-        if(!writeString(players[i], encoded)) {
-            PRINT("ERRORE!\n")
-        }
+    for(uint8_t i=0; i<n_players; i++){
+        writeNum(players[i], n_players);
+        writeNum(players[i], i);
+        writeString(players[i], encoded);
     }
     
     return;
@@ -54,8 +51,8 @@ void get_move(player_t *player){
 
 void send_maps(player_t *player, size_t index){
 
-    char *encoded=(char *) malloc((n_players + (n_players * MAP_SIZE * MAP_SIZE) + 1) * sizeof(char));
-    bzero(encoded, sizeof(*encoded));
+    char *encoded = (char *) malloc((n_players + (n_players * MAP_SIZE * MAP_SIZE) + 1) * sizeof(char));
+    bzero(encoded, (n_players + (n_players * MAP_SIZE * MAP_SIZE) + 1) * sizeof(char));
 
     char *cur = encoded;
 
@@ -81,24 +78,25 @@ void send_maps(player_t *player, size_t index){
 
 void send_map(player_t *player){
 
-    char *buffer=NULL;
-    char *map_encoded = NULL;
+    char *encoded = (char *) malloc(sizeof(*encoded) * (MAP_SIZE * MAP_SIZE + 1) );
+    bzero(encoded, sizeof(*encoded) * (MAP_SIZE * MAP_SIZE + 1));
     
-    waitString(player, &buffer);
+    uint8_t i;
+    waitNum(player, (uint32_t *) &i);
+    char *cur = encoded;
 
-    uint8_t ind = (buffer[0] - '0') - 1;
-    char *cur = map_encoded;
+    DEBUG("[DEBUG]: %p - %p\n", cur, encoded)
+
+    DEBUG("[DEBUG]: sending map of %s to %s\n", players[i]->nickname, player->nickname)
 
     for(int j=0; j<MAP_SIZE; j++){
         for(int k=0; k<MAP_SIZE; k++){
-            *cur++=players[ind]->map->grid[j][k];
+            *cur++=players[i]->map->grid[j][k];
         }
     }
-    *cur = '\0';
 
-    writeString(player, map_encoded);
-    free(map_encoded);
-    free(buffer);
+    writeString(player, encoded);
+    free(encoded);
     return;
 
 }

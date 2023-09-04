@@ -3,26 +3,23 @@
 extern int socket_client;
 
 char **nicknames; 
-size_t num; //total number of players
-size_t me; //index of this client
+uint8_t num;         //total number of players
+uint8_t me;          //index of this client
 
-#define BUFF_LEN 1024
 void gameInitialization(void){
 
     char *encoded = NULL;
+    waitNum((uint32_t *) &num);
+    waitNum((uint32_t *) &me);
     waitString(&encoded);
-    PRINT("Encoded: %s\n", encoded)
-
-    num = encoded[0] - '0'; 
 
     nicknames = (char **) malloc(num * sizeof(char *));
     bzero(nicknames, num * sizeof(char *));
 
-    char *cur = encoded+1;
     char *token = NULL;
-    size_t p = 0;
+    uint8_t p = 0;
 
-    token = strtok(cur, ";");
+    token = strtok(encoded, ";");
 
     while(token != NULL && p < num){
         nicknames[p] = (char *) malloc(NICKNAME_LEN * sizeof(char));
@@ -31,10 +28,8 @@ void gameInitialization(void){
         token = strtok(NULL, ";");
     }
 
-    me = *token - '0';
-
     for(size_t i=0; i<num; i++) {
-        PRINT("%s\n", nicknames[i]);
+        DEBUG("[DEBUG]: %s\n", nicknames[i]);
     }
 
     return;
@@ -44,7 +39,7 @@ void gameInitialization(void){
 void make_move(void){
 
     char *encoded_move = (char *) malloc(4 * sizeof(char)); 
-    bzero(encoded_move, sizeof(*encoded_move));
+    bzero(encoded_move, 4 * sizeof(char));
 
     uint8_t x, y;
 
@@ -158,7 +153,7 @@ void print_map(void){
 
     char *encoded = NULL;
     
-    writeNum((uint32_t) choose_player());
+    writeNum((uint32_t) choose_player()-1);
 
     waitString(&encoded);
 
@@ -200,4 +195,3 @@ void print_map(void){
     free(encoded);
 
 }
-#undef BUFF_LEN
