@@ -318,7 +318,7 @@ static void _send_map(void) {
 
     *cur = 0;   // Inserisco il terminatore
 
-    write(socket_client, ships_encoded, strlen(ships_encoded));
+    writeString(ships_encoded);
     PRINT("\nMappa inviata al server\nIn attesa degli altri giocatori...\n");
     free(ships_encoded);
 

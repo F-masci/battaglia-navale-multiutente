@@ -12,6 +12,7 @@
 
 #include "type.h"
 #include "cmd.h"
+#include "helpers.h"
 
 void printMap(void);
 void mapInitialization(void);

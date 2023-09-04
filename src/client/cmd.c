@@ -2,10 +2,10 @@
 
 extern int socket_client;
 
-cmd_t waitCmd() {
+cmd_t waitCmd(void) {
     
     cmd_t cmd;
-    if(read(socket_client, &cmd, sizeof(cmd)) <= 0) return CMD_ERROR;
+    if(recv(socket_client, &cmd, sizeof(cmd), MSG_WAITALL) < (ssize_t) sizeof(cmd)) return CMD_ERROR;
     return cmd;
 
 }

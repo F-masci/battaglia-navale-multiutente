@@ -43,16 +43,19 @@ int main(void) {
     map = (cell_t **) malloc(MAP_SIZE * sizeof(*map));
     for(i=0; i<MAP_SIZE; i++) map[i] = (cell_t *) malloc(MAP_SIZE * sizeof(*(map[i])));
 
-    mapInitialization();                   //MAP INITIALIZATION
+    mapInitialization();                   // MAP INITIALIZATION
     
-    gameInitialization();                  //INITIALIZATION OF DATA NEEDED FOR THE GAME
+    gameInitialization();                  // INITIALIZATION OF DATA NEEDED FOR THE GAME
 
     cmd_t cmd;
     char *buffer = (char *)malloc(sizeof(char) * BUFF_LEN);
 
 wait_turn:
 
+    PRINT("In attesa del proprio turno\n")
+
     cmd = waitCmd();
+    PRINT("CMD: %hhu\n", cmd)
     if(cmd != CMD_TURN) goto wait_turn;
 
     PRINT("È il tuo turno\n")

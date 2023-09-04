@@ -1,6 +1,6 @@
 #include "handler.h"
 
-extern size_t n_players;                                // Numero di giocatori in lobby
+extern uint8_t n_players;                                // Numero di giocatori in lobby
 extern player_t **players;                              // Array di giocatori
 
 extern pthread_t *w_threads;                            // Waiting threads
@@ -15,7 +15,7 @@ void *clientHandler(void *socket_addr) {
 
     cmd_t cmd;
 
-    char *buffer = (char *) malloc(sizeof(*buffer) * BUFF_LEN);
+    char *buffer = NULL;
 
 handler_loop:
         cmd = waitCmd(player);
@@ -23,9 +23,10 @@ handler_loop:
         PRINT("[%s]: request command %hhu\n", player->nickname, cmd)
         switch(cmd) {
             case CMD_SET_NICKNAME: 
-                if(waitString(player, buffer) == false) goto handler_exit;
+                if(waitString(player, &buffer) == false) goto handler_exit;
                 PRINT("[%s]: set nickname ", player->nickname)
                 if(setNicknamePlayer(player->index, buffer)) PRINT("%s\n", player->nickname)
+                free(buffer);
                 break;
 
             case CMD_LIST_PLAYERS: 
@@ -55,7 +56,7 @@ handler_loop:
                 break;
 
             case CMD_SEND_MAP:
-                waitString(player, buffer);
+                waitString(player, &buffer);
                 char *cur = buffer;
                 for(int k=0; k<SHIPS_NUM; k++) {
                     player->map->ships[k].dim = (uint8_t) *cur++ - '0';
@@ -74,6 +75,7 @@ handler_loop:
                 so.sem_flg = 0;
                 semop(semid, &so, 1);
 
+                free(buffer);
                 pthread_exit(NULL);
                 break;
             

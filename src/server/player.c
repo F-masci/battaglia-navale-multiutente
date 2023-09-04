@@ -2,7 +2,7 @@
 
 extern player_t **players;                              // Array di giocatori
 static size_t players_len = DEFAULT_PLAYERS_LEN;        // Lunghezza dell'array dei giocatori
-extern size_t n_players;                                // Numero di giocatori in lobby
+extern uint8_t n_players;                                // Numero di giocatori in lobby
 
 player_t *createPlayer(int socket) {
 
@@ -36,7 +36,7 @@ bool addPlayer(player_t *player) {
 bool removePlayer(size_t index) {
     errno = 0;
     close(players[index]->socket);
-    for(size_t i = index; i<n_players-1; i++) {
+    for(uint8_t i = index; i<n_players-1; i++) {
         players[i] = players[i+1];
         players[i]->index = i;
     }
@@ -48,8 +48,8 @@ bool removePlayer(size_t index) {
 bool setNicknamePlayer(size_t index, char *nickname) {
     errno = 0;
     size_t len = strlen(nickname);
-    if(len > 255) return false;
-    bzero(players[index]->nickname, 256);
+    if(len > NICKNAME_LEN-1) return false;
+    bzero(players[index]->nickname, NICKNAME_LEN);
     memcpy(players[index]->nickname, nickname, len);
     return true;
 }

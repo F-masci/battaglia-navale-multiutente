@@ -3,6 +3,8 @@
 #include "../shared/config.h"
 #include "../shared/lib.h"
 
+#include "helpers.h"
+
 void print_maps(void);
 uint8_t choose_player(void);
 void gameInitialization(void);

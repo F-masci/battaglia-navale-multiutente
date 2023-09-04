@@ -1,5 +1,5 @@
 CC=gcc
-CFLAGS=$(FLAGS) -Wall -Wextra -g -lpthread
+CFLAGS=$(FLAGS) -Wall -Wextra -g -lpthread -lm
 TARGET=main
 SRC_DIR=src
 OBJ_DIR=obj

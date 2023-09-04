@@ -4,7 +4,7 @@ extern int socket_server;
 extern struct sockaddr_in addr_server;
 extern pthread_t *w_threads;
 
-extern size_t n_players;                                // Numero di giocatori in lobby
+extern uint8_t n_players;                                // Numero di giocatori in lobby
 extern player_t **players;                              // Array di giocatori
 
 static pthread_mutex_t mut[WAITING_THREADS];

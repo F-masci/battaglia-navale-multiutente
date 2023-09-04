@@ -3,7 +3,7 @@
 cmd_t waitCmd(player_t *player) {
     
     cmd_t cmd;
-    if(read(player->socket, &cmd, sizeof(cmd)) <= 0) return CMD_ERROR;
+    if(recv(player->socket, &cmd, sizeof(cmd), MSG_WAITALL) < (ssize_t) sizeof(cmd)) return CMD_ERROR;
     return cmd;
 
 }

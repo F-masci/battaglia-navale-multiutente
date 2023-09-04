@@ -24,7 +24,7 @@
 int socket_server;
 struct sockaddr_in addr_server;
 
-size_t n_players = 0;                           // Numero di giocatori in lobby
+uint8_t n_players = 0;                           // Numero di giocatori in lobby
 player_t **players = NULL;                      // Array di puntatori ai metadati dei giocatori
 pthread_t *w_threads;                           // Waiting threads
 int semid;                                      // Sempahore to sync map receive
@@ -67,6 +67,8 @@ int main() {
 
     size_t index = 0;
     cmd_t cmd;
+
+    PRINT("[SERVER] Starting game\n")
 
 main_loop:
 

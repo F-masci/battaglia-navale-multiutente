@@ -9,7 +9,7 @@ void clientConnection(void)
 
     socket_client = socket(AF_INET, SOCK_STREAM, 0);
     uint8_t cmd;
-    char *buffer = (char *)malloc(sizeof(*buffer) * BUFF_LEN);
+    char *buffer = NULL;
     char *nickname = NULL;
     
 retry_connect:
@@ -18,45 +18,46 @@ retry_connect:
         PRINT("\t[1] Modifica il tuo nickname\n")
         PRINT("\t[2] Lista dei giocatori attualmente connessi\n")
         PRINT("\t[3] Inizia la partita\n\n")
+
 client_connection_loop:
-            PRINT("Comando: ")
-            if(scanf("%hhu", &cmd) <= 0) {
-                while((getchar()) != '\n');
-                goto client_connection_loop;
-            }
+        PRINT("Comando: ")
+        if(scanf("%hhu", &cmd) <= 0) {
+            while((getchar()) != '\n');
+            goto client_connection_loop;
+        }
 
-            bzero(buffer, BUFF_LEN);
-            switch(cmd) {
-                case 1: 
-                    sendCmd(CMD_SET_NICKNAME);
-                    PRINT("Nickname: ")
-                    scanf("%ms", &nickname);
-                    write(socket_client, nickname, strlen(nickname));
-                    PRINT("Nickname selezionato: %s\n", nickname)
-                    free(nickname);
-                    break;
+        switch(cmd) {
+            case 1: 
+                sendCmd(CMD_SET_NICKNAME);
+                PRINT("Nickname: ")
+                scanf("%ms", &nickname);
+                writeString(nickname);
+                PRINT("Nickname selezionato: %s\n", nickname)
+                free(nickname);
+                break;
 
-                case 2: 
-                    sendCmd(CMD_LIST_PLAYERS);
-                    read(socket_client, buffer, BUFF_LEN);
-                    nickname = strtok(buffer, ";");
-                    PRINT("\n")
-                    while(nickname != NULL) {
-                        PRINT("\t-> %s\n", nickname)
-                        nickname = strtok(NULL, ";");
-                    }
-                    PRINT("\n")
-                    nickname = NULL;
-                    break;
+            case 2: 
+                sendCmd(CMD_LIST_PLAYERS);
+                waitString(&buffer);
+                nickname = strtok(buffer, ";");
+                PRINT("\n")
+                while(nickname != NULL) {
+                    PRINT("\t-> %s\n", nickname)
+                    nickname = strtok(NULL, ";");
+                }
+                PRINT("\n")
+                nickname = NULL;
+                free(buffer);
+                break;
 
-                case 3: 
-                    sendCmd(CMD_START_GAME);
-                    PRINT("In attesa degli altri giocatori...\n")
-                    cmd = waitCmd();
-                    if(cmd == CMD_START_GAME) return;
-                    break;
-                default: goto client_connection_loop;
-            }
+            case 3: 
+                sendCmd(CMD_START_GAME);
+                PRINT("In attesa degli altri giocatori...\n")
+                cmd_t rec_cmd = waitCmd();
+                if(rec_cmd == CMD_START_GAME) return;
+                break;
+            default: goto client_connection_loop;
+        }
             
         goto client_connection_loop;
     } else {

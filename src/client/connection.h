@@ -5,5 +5,6 @@
 #include "../shared/cmd.h"
 
 #include "cmd.h"
+#include "helpers.h"
 
 void clientConnection(void);

@@ -9,33 +9,33 @@ size_t me; //index of this client
 #define BUFF_LEN 1024
 void gameInitialization(void){
 
-    char *encoded = (char *) malloc(BUFF_LEN * sizeof(char));
-    bzero(encoded, sizeof(*encoded));
-
-    read(socket_client, encoded, BUFF_LEN);
+    char *encoded = NULL;
+    waitString(&encoded);
+    PRINT("Encoded: %s\n", encoded)
 
     num = encoded[0] - '0'; 
 
     nicknames = (char **) malloc(num * sizeof(char *));
-    for(size_t i=0; i<num; i++){
-        nicknames[i] = (char *) malloc(255 * sizeof(char));
-    }
+    bzero(nicknames, num * sizeof(char *));
 
     char *cur = encoded+1;
-    char *token;
+    char *token = NULL;
     size_t p = 0;
-    int len=0;
 
-    token=strtok(cur, ";");
+    token = strtok(cur, ";");
 
-    while(token != NULL && p<num){
-        strncpy(nicknames[p++], token, 255);
-        len+=strlen(nicknames[p-1]);
-        token=strtok(NULL, ";");
+    while(token != NULL && p < num){
+        nicknames[p] = (char *) malloc(NICKNAME_LEN * sizeof(char));
+        bzero(nicknames[p], NICKNAME_LEN * sizeof(char));
+        memcpy(nicknames[p++], token, strlen(token));
+        token = strtok(NULL, ";");
     }
 
-    cur = encoded + len + num + 1;
-    me = *cur - '0';
+    me = *token - '0';
+
+    for(size_t i=0; i<num; i++) {
+        PRINT("%s\n", nicknames[i]);
+    }
 
     return;
 
@@ -55,25 +55,25 @@ void make_move(void){
     //mental note: check coordinates values
 
     PRINT("\nCoordinata x: ");
-retry:
+retry_x:
     if(scanf("%hhu", &x)<=0){
         while((getchar()) != '\n');
-        goto retry;
+        goto retry_x;
     }
 
     *cur++ = '0' + x;
 
     PRINT("\nCoordinata y: ");
-retry:
+retry_y:
     if(scanf("%hhu", &y)<=0){
         while((getchar()) != '\n');
-        goto retry;
+        goto retry_y;
     }
 
     *cur++ = '0' + y;
     *cur = '\0';
 
-    write(socket_client, encoded_move, sizeof(encoded_move));
+    writeString(encoded_move);
 
     return;
 
@@ -102,10 +102,8 @@ retry:
 
 void print_maps(void){
 
-    char *encoded=(char *) malloc(sizeof(char) * BUFF_LEN);
-    bzero(encoded, BUFF_LEN);
-
-    read(socket_client, encoded, BUFF_LEN);
+    char *encoded = NULL;
+    waitString(&encoded);
 
     char *cur = encoded;
 
@@ -149,21 +147,20 @@ void print_maps(void){
         PRINT("\n");
     }
     PRINT("\n");
-        
+    
+    free(encoded);
+
     return;
 
 }
 
 void print_map(void){
 
-    char *encoded = (char *) malloc(sizeof(char) * BUFF_LEN);
-    bzero(encoded, sizeof(*encoded));
-    char ind;
+    char *encoded = NULL;
+    
+    writeNum((uint32_t) choose_player());
 
-    ind='0' + choose_player();
-    write(socket_client, &ind, 1);
-
-    read(socket_client, encoded, BUFF_LEN);
+    waitString(&encoded);
 
     char *cur = encoded;
 
@@ -199,6 +196,8 @@ void print_map(void){
         PRINT("----")
     }
     PRINT("\n")
+
+    free(encoded);
 
 }
 #undef BUFF_LEN
