@@ -26,7 +26,7 @@ all:
 	make server
 	make client
 
-.PHONY: init server client clean
+.PHONY: init server client clean deploy
 
 init:
 	@false
@@ -42,3 +42,7 @@ client: $(OBJS_CLN)
 
 clean:
 	-$(RM) $(TARGET) $(OBJ_DIR)/*/*
+
+deploy: $(sort $(OBJS_SRV) $(OBJS_CLN))
+	$(CC) $(OBJS_SRV) -o server $(CFLAGS) -DPROD
+	$(CC) $(OBJS_CLN) -o client $(CFLAGS) -DPROD

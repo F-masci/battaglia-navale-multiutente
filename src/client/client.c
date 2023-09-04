@@ -55,7 +55,6 @@ wait_turn:
     PRINT("In attesa del proprio turno\n")
 
     cmd = waitCmd();
-    PRINT("CMD: %hhu\n", cmd)
     if(cmd != CMD_TURN) goto wait_turn;
 
     PRINT("È il tuo turno\n")

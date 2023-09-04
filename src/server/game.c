@@ -1,31 +1,28 @@
 #include "game.h"
 
-extern size_t n_players;
+extern uint8_t n_players;
 extern player_t **players;
 
 #define INDEX_LEN 3
 void gameInitialization(void){
 
     size_t nick_len;
-    size_t buff_len = n_players + (n_players * (NICKNAME_LEN-1)) + INDEX_LEN;
-    char *encoded = (char *) malloc(buff_len * sizeof(char));
-    bzero(encoded, sizeof(*encoded) * buff_len);
+    char *encoded = (char *) malloc(n_players * NICKNAME_LEN * sizeof(char));
+    bzero(encoded, sizeof(*encoded) * n_players * NICKNAME_LEN);
 
     char *cur = encoded;
-    *cur++ = '0' + n_players;
 
-    for(size_t i=0; i<n_players; i++){
+    for(uint8_t i=0; i<n_players; i++){
         nick_len = strlen(players[i]->nickname);
         memcpy(cur, players[i]->nickname, nick_len);
         cur += nick_len;
         *cur++=';';
     }
 
-    for(size_t i=0; i<n_players; i++){
-        *cur = '0' + i;
-        if(!writeString(players[i], encoded)) {
-            PRINT("ERRORE!\n")
-        }
+    for(uint8_t i=0; i<n_players; i++){
+        writeNum(players[i], n_players);
+        writeNum(players[i], i);
+        writeString(players[i], encoded);
     }
     
     return;

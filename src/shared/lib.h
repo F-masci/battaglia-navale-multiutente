@@ -23,6 +23,12 @@
 
 #define PRINT(...)  { printf(__VA_ARGS__); fflush(stdout); }
 
+#ifdef PROD
+#define DEBUG(...) {}
+#else
+#define DEBUG(...) { printf(__VA_ARGS__); fflush(stdout); }
+#endif
+
 #define clrscr() PRINT("\033[1;1H\033[2J")
 
 #define CHAR_FOR_BYTES(bytes) ( (uint8_t) ceil(log10(pow(2., 8 * (double) bytes))) )

@@ -7,6 +7,7 @@ bool waitNum(uint32_t *ptr) {
 
     if(recv(socket_client, ptr, sizeof(*ptr), MSG_WAITALL) < (ssize_t) sizeof(*ptr)) return false;
     *ptr = ntohl(*ptr);
+    DEBUG("[DEBUG]: Received %d\n", *ptr)
     return true;
 
 }
@@ -26,12 +27,12 @@ bool waitString(char **ptr) {
     uint32_t len;
     if(!waitNum(&len)) return false;
 
-    PRINT("[DEBUG]: Waiting string of %d chars\n", len);
+    DEBUG("[DEBUG]: Waiting string of %d chars\n", len);
 
     char *buffer = (char *) malloc(sizeof(*buffer) * (len+1));
     bzero(buffer, len+1);   // Il carattere in più è per il terminatore
     if(recv(socket_client, buffer, len, MSG_WAITALL) < (ssize_t) len) return false;
-    PRINT("[DEBUG]: %s (%ld)\n", buffer, strlen(buffer))
+    DEBUG("[DEBUG]: %s (%ld)\n", buffer, strlen(buffer))
     *ptr = buffer;
     return true;
 

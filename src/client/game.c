@@ -3,26 +3,24 @@
 extern int socket_client;
 
 char **nicknames; 
-size_t num; //total number of players
-size_t me; //index of this client
+uint8_t num;         //total number of players
+uint8_t me;          //index of this client
 
 #define BUFF_LEN 1024
 void gameInitialization(void){
 
     char *encoded = NULL;
+    waitNum((uint32_t *) &num);
+    waitNum((uint32_t *) &me);
     waitString(&encoded);
-    PRINT("Encoded: %s\n", encoded)
-
-    num = encoded[0] - '0'; 
 
     nicknames = (char **) malloc(num * sizeof(char *));
     bzero(nicknames, num * sizeof(char *));
 
-    char *cur = encoded+1;
     char *token = NULL;
-    size_t p = 0;
+    uint8_t p = 0;
 
-    token = strtok(cur, ";");
+    token = strtok(encoded, ";");
 
     while(token != NULL && p < num){
         nicknames[p] = (char *) malloc(NICKNAME_LEN * sizeof(char));
@@ -31,10 +29,8 @@ void gameInitialization(void){
         token = strtok(NULL, ";");
     }
 
-    me = *token - '0';
-
     for(size_t i=0; i<num; i++) {
-        PRINT("%s\n", nicknames[i]);
+        DEBUG("[DEBUG]: %s\n", nicknames[i]);
     }
 
     return;

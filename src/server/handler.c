@@ -30,12 +30,14 @@ handler_loop:
                 break;
 
             case CMD_LIST_PLAYERS: 
+                buffer = (char *) malloc(sizeof(*buffer) * BUFF_LEN);
                 bzero(buffer, BUFF_LEN);
-                for(size_t i=0; i<n_players; i++) {
+                for(uint8_t i=0; i<n_players; i++) {
                     strcat(buffer, players[i]->nickname);
                     strcat(buffer, ";");
                 }
                 writeString(player, buffer);
+                free(buffer);
                 break;
 
             case CMD_START_GAME:
