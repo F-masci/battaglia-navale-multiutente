@@ -45,6 +45,9 @@ void get_move(player_t *player){
     if(players[index]->map->grid[y][x] == '1'){
         players[index]->map->grid[y][x] = '2';
     }
+    else if(players[index]->map->grid[y][x] == '0'){
+        players[index]->map->grid[y][x] == '3';
+    }
 
     return;
 }
@@ -100,3 +103,4 @@ void send_map(player_t *player){
     return;
 
 }
+

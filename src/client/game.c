@@ -45,7 +45,7 @@ void make_move(void){
 
     char *cur = encoded_move;
 
-    *cur++ = '0' + (choose_player() - 1);
+    *cur++ = '0' + (choose_player(1) - 1);
 
     //mental note: check coordinates values
 
@@ -58,7 +58,7 @@ retry_x:
 
     *cur++ = '0' + x;
 
-    PRINT("\nCoordinata y: ");
+    PRINT("Coordinata y: ");
 retry_y:
     if(scanf("%hhu", &y)<=0){
         while((getchar()) != '\n');
@@ -74,14 +74,14 @@ retry_y:
 
 }
 
-uint8_t choose_player(void){
+uint8_t choose_player(int option){
     uint8_t ind;
     
     PRINT("\nScegli giocatore: \n\n");
 
     for(size_t i=0; i<num; i++){
-        if(i==me) PRINT("\t[%ld] TU - %s\n", i+1, nicknames[i])
-        else PRINT("\t[%ld] %s\n", i+1, nicknames[i]);
+        if(i==me && option==0) PRINT("\t[%ld] TU - %s\n", i+1, nicknames[i])
+        else if(i!=me) PRINT("\t[%ld] %s\n", i+1, nicknames[i]);
     }
 
     PRINT("\nGiocatore: ");
@@ -103,20 +103,59 @@ void print_maps(void){
     char *cur = encoded;
 
     for(size_t j=0; j<num; j++){
-        if(*cur++ == 'M'){
+        cur = encoded + (j * MAP_SIZE * MAP_SIZE) + j;
+        if(*cur == 'M'){
             PRINT("\n[LA TUA MAPPA] %s\n", nicknames[j]);
+            cur = encoded + (j * MAP_SIZE * MAP_SIZE) + j + 1;
+            map_print(0, cur);
         }
-        else PRINT("\n[GIOCATORE %ld] %s\n", j+1, nicknames[j]); 
+        else{
+            PRINT("\n[GIOCATORE %ld] %s\n", j+1, nicknames[j]);
+            cur = encoded + (j * MAP_SIZE * MAP_SIZE) + j + 1; 
+            map_print(1, cur);
+        }
+    }
+    PRINT("\n");
+    
+    free(encoded);
 
-        PRINT("\n    ");
-        for(int i=0; i<MAP_SIZE; i++){
-            PRINT(" %d  ", i);
-        }
-        PRINT("\n    ");
-        for(int i=0; i<MAP_SIZE; i++){
-            PRINT("----");
-        }
-        PRINT("\n");
+    return;
+
+}
+
+void print_map(void){
+
+    char *encoded = NULL;
+    uint8_t p = choose_player(0) - 1;
+    
+    writeNum((uint32_t) p);
+
+    waitString(&encoded);
+
+    if(p == me) map_print(0, encoded);
+    else map_print(1, encoded);
+
+    free(encoded);
+
+    return;
+
+}
+
+void map_print(int option, char *encoded){
+
+    char *cur = encoded;
+
+    PRINT("\n    ");
+    for(int i=0; i<MAP_SIZE; i++){
+        PRINT(" %d  ", i);
+    }
+    PRINT("\n    ");
+    for(int i=0; i<MAP_SIZE; i++){
+        PRINT("----");
+    }
+    PRINT("\n");
+
+    if(option==0){
         for(int i=0; i<MAP_SIZE; i++){
             PRINT(" %d ", i);
             for(int k=0; k<MAP_SIZE; k++) {
@@ -130,68 +169,44 @@ void print_maps(void){
                     case '2':
                         PRINT("| K ");
                         break;
+                    case '3':
+                        PRINT("| F ");
+                        break;
                     default: break;
                 }
             }
             PRINT("|\n");
         }
-        PRINT("    ");
+    }
+    else{
         for(int i=0; i<MAP_SIZE; i++){
-            PRINT("----");
+            PRINT(" %d ", i);
+            for(int k=0; k<MAP_SIZE; k++) {
+                switch(*cur++){
+                    case '0':
+                        PRINT("|   ");
+                        break;
+                    case '1':
+                        PRINT("|   ");
+                        break;
+                    case '2':
+                        PRINT("| K ");
+                        break;
+                    case '3':
+                        PRINT("| F ");
+                        break;
+                    default: break;
+                }
+            }
+            PRINT("|\n");
         }
-        PRINT("\n");
     }
-    PRINT("\n");
-    
-    free(encoded);
 
-    return;
-
-}
-
-void print_map(void){
-
-    char *encoded = NULL;
-    
-    writeNum((uint32_t) choose_player()-1);
-
-    waitString(&encoded);
-
-    char *cur = encoded;
-
-    PRINT("\n    ");
-    for(int i=0; i<MAP_SIZE; i++){
-        PRINT(" %d  ", i)
-    }
-    PRINT("\n    ");
+    PRINT("    ");
     for(int i=0; i<MAP_SIZE; i++){
         PRINT("----");
     }
     PRINT("\n");
-    for(int i=0; i<MAP_SIZE; i++){
-        PRINT(" %d ", i)
-        for(int k=0; k<MAP_SIZE; k++) {
-            switch(*cur++){
-                case '0':
-                    PRINT("|   ")
-                    break;
-                case '1':
-                    PRINT("| X ")
-                    break;
-                case '2':
-                    PRINT("| K ")
-                    break;
-                default: break;
-            }
-        }
-        PRINT("|\n");
-    }
-    PRINT("    ");
-    for(int i=0; i<MAP_SIZE; i++){
-        PRINT("----")
-    }
-    PRINT("\n")
 
-    free(encoded);
-
+    return;
 }
