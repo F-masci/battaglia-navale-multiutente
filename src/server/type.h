@@ -10,6 +10,7 @@ typedef struct _ship_t{
     uint8_t x;
     uint8_t y;
     char dir;
+    bool sunk;
 } ship_t;
 
 typedef struct _map_t {

@@ -65,6 +65,7 @@ handler_loop:
                     player->map->ships[k].x = (uint8_t) *cur++ - '0';
                     player->map->ships[k].y = (uint8_t) *cur++ - '0';
                     player->map->ships[k].dir = *cur++;
+                    player->map->ships[k].sunk = false;
                 }
 
                 makeMap(player);

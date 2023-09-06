@@ -49,49 +49,63 @@ int main(void) {
 
     cmd_t cmd;
     char *buffer = (char *)malloc(sizeof(char) * BUFF_LEN);
+    char *message = (char *)malloc(sizeof(char) * BUFF_LEN);
+    uint32_t alive=0;
 
 wait_turn:
 
     PRINT("In attesa del proprio turno\n")
 
+    //prima di ogni turno il client riceve comunicazioni dal server
+
     cmd = waitCmd();
-    if(cmd != CMD_TURN) goto wait_turn;
-
-    PRINT("È il tuo turno\n")
-
-main_loop:
-
-    PRINT("\nSeleziona un comando:\n\n")
-    PRINT("\t[1] Visualizza mappe giocatori\n")
-    PRINT("\t[2] Visualizza una mappa\n")
-    PRINT("\t[3] Invia comando\n\n")
-
-    PRINT("Comando: ")
-    if(scanf("%hhu", &cmd) <= 0) {
-        while((getchar()) != '\n');
-        goto main_loop;
+    if(cmd == CMD_STATUS){
+        waitString(&message);
+        printf("%s\n", message);
+        waitNum(&alive);
+        if(alive == 1) goto end;
+        else if(alive == 0) goto wait_turn;
     }
+    else if(cmd == CMD_TURN){
 
-    bzero(buffer, BUFF_LEN);
-    switch(cmd) {
-        case 1: 
-            sendCmd(CMD_GET_MAPS);
-            print_maps();
+        PRINT("È il tuo turno\n")
+
+    main_loop:
+
+        PRINT("\nSeleziona un comando:\n\n")
+        PRINT("\t[1] Visualizza mappe giocatori\n")
+        PRINT("\t[2] Visualizza una mappa\n")
+        PRINT("\t[3] Invia comando\n\n")
+
+        PRINT("Comando: ")
+        if(scanf("%hhu", &cmd) <= 0) {
+            while((getchar()) != '\n');
             goto main_loop;
+        }
 
-        case 2:
-            sendCmd(CMD_GET_MAP);
-            print_map();
-            goto main_loop;
+        bzero(buffer, BUFF_LEN);
+        switch(cmd) {
+            case 1: 
+                sendCmd(CMD_GET_MAPS);
+                print_maps();
+                goto main_loop;
 
-        case 3: 
-            sendCmd(CMD_MOVE);
-            make_move();
-            goto wait_turn;
+            case 2:
+                sendCmd(CMD_GET_MAP);
+                print_map();
+                goto main_loop;
 
-        default: goto main_loop;
+            case 3: 
+                sendCmd(CMD_MOVE);
+                make_move();
+                goto wait_turn;
+
+            default: goto main_loop;
+        }
     }
+    else goto wait_turn;
 
+end:
     return 0;
 
 }

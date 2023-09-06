@@ -89,7 +89,7 @@ main_cmd_loop:
             goto main_cmd_loop;
 
         case CMD_MOVE:
-            get_move(players[index]);
+            get_move(players[index], index);
             break;
 
         case CMD_ERROR:
@@ -97,6 +97,8 @@ main_cmd_loop:
 
         default: goto main_cmd_loop;
     }
+
+    //qui il server invia comunicazioni ai client sullo stato del gioco
 
     index = (index+1)%n_players;
     goto main_loop;

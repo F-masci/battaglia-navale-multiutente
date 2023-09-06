@@ -30,27 +30,99 @@ void gameInitialization(void){
 }
 #undef INDEX_LEN
 
-void get_move(player_t *player){
+#define BUFF_LEN 1024
+void get_move(player_t *player, int ind){
 
-    uint8_t index, x, y;
+    uint8_t index, x1, y1;
+    int i;
+    char *message = (char *) malloc(BUFF_LEN * sizeof(char));
+    bzero(message, BUFF_LEN);
 
     char *encoded_move = NULL;
 
     waitString(player, &encoded_move);
 
     index = encoded_move[0] - '0';
-    x = encoded_move[1] - '0';
-    y = encoded_move[2] - '0';
+    x1 = encoded_move[1] - '0';
+    y1 = encoded_move[2] - '0';
 
-    if(players[index]->map->grid[y][x] == '1'){
-        players[index]->map->grid[y][x] = '2';
+    if(players[index]->map->grid[y1][x1] == '1'){
+        players[index]->map->grid[y1][x1] = '2';
+        sprintf(message, "%s ha colpito %s [%hhu; %hhu]\n", players[ind]->nickname, players[index]->nickname, x1, y1);
     }
-    else if(players[index]->map->grid[y][x] == '0'){
-        players[index]->map->grid[y][x] == '3';
+    else if(players[index]->map->grid[y1][x1] == '0'){
+        players[index]->map->grid[y1][x1] = '3';
+        sprintf(message, "%s ha colpito a vuoto %s [%hhu; %hhu]\n", players[ind]->nickname, players[index]->nickname, x1, y1);
+    }
+
+    for(int h=0; h<n_players; h++){
+        sendCmd(players[h], CMD_STATUS);
+        writeString(players[h], message);
+    }
+
+    //il server esegue il controllo 
+    int x, y, dim;
+
+    //aggiorna 
+    for(int k=0; k<SHIPS_NUM; k++){
+        if(players[index]->map->ships[k].sunk == false){
+            
+            x = players[index]->map->ships[k].x;
+            y = players[index]->map->ships[k].y;
+            dim = players[index]->map->ships[k].dim;
+
+            switch(players[index]->map->ships[k].dir){
+                case 'W':
+                    for(i=y; i>y-dim; i--){
+                        if(players[index]->map->grid[i][x] =='1') goto next;
+                    }
+                    players[index]->map->ships[k].sunk = true;
+                    break;
+                case 'A':
+                    for(i=x; i>x-dim; i--){
+                        if(players[index]->map->grid[y][i] =='1') goto next;
+                    }
+                    players[index]->map->ships[k].sunk = true;
+                    break;
+                case 'S':
+                    for(i=y; i<y+dim; i++){
+                        if(players[index]->map->grid[i][x] =='1') goto next;
+                    }
+                    players[index]->map->ships[k].sunk = true;
+                    break;
+                case 'D':
+                    for(i=x; i<x+dim; i++){
+                        if(players[index]->map->grid[y][i] =='1') goto next;
+                    }
+                    players[index]->map->ships[k].sunk = true;
+                    break;
+                default: break;
+            }
+        }
+
+        next:
+    }
+
+    bool elim = true;
+
+    for(int k=0; k<SHIPS_NUM; k++){
+        if(players[index]->map->ships[k].sunk == false){
+            elim = false;
+            break;
+        }
+    }
+
+    for(int j=0; j<n_players; j++){
+        if(j==index){
+            if(elim) writeNum(players[index], 1);
+            else writeNum(players[index], 0);
+        }
+        else writeNum(players[j], 0);
     }
 
     return;
 }
+#undef BUFF_LEN
 
 void send_maps(player_t *player, size_t index){
 
