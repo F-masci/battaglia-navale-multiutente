@@ -36,7 +36,89 @@ int main(void) {
     bzero((char*) &addr_server, sizeof(addr_server));
     addr_server.sin_family = AF_INET;
     addr_server.sin_port = htons(PORT);     // 6500
-    addr_server.sin_addr.s_addr = ADDRESS;  // 0.0.0.0
+    uint8_t config;
+
+    int udp_socket_client;
+    struct sockaddr_in udp_addr_client;
+    bzero((char*) &udp_addr_client, sizeof(udp_addr_client));
+    udp_addr_client.sin_family = AF_INET;
+    udp_addr_client.sin_port = htons(UDP_PORT_CLN);     // 6502
+    udp_addr_client.sin_addr.s_addr = ADDRESS;          // 0.0.0.0
+
+    struct sockaddr_in udp_server_addr;
+    bzero((char *) &udp_server_addr, sizeof(udp_server_addr));
+    udp_server_addr.sin_family = AF_INET;
+    udp_server_addr.sin_port = htons(UDP_PORT_SRV);                 // 6501
+
+    struct timeval timeout;
+    timeout.tv_sec = 5;
+    timeout.tv_usec = 0;
+
+    udp_socket_client = socket(AF_INET, SOCK_DGRAM, 0);
+    setsockopt(udp_socket_client, SOL_SOCKET, SO_REUSEADDR, &(int) {1}, sizeof(int));
+    setsockopt(udp_socket_client, SOL_SOCKET, SO_BROADCAST, &(int) {1}, sizeof(int));
+    setsockopt (udp_socket_client, SOL_SOCKET, SO_RCVTIMEO, &timeout, sizeof(timeout));
+    bind(udp_socket_client, (struct sockaddr *) &udp_addr_client, sizeof(udp_addr_client));
+
+    socklen_t udp_server_addr_len = sizeof(udp_server_addr);
+
+    PRINT("Seleziona il server di gioco:\n\n")
+    PRINT("\t[1] Ricerca nella rete locale\n")
+    PRINT("\t[2] Inserisce ip manualmente\n")
+    PRINT("\t[3] Inserisce url manualmente\n")
+config_connection_loop:
+    PRINT("\nComando: ")
+    if(scanf("%hhu", &config) <= 0) {
+        while((getchar()) != '\n');
+        goto config_connection_loop;
+    }
+
+    switch(config) {
+        case 1:
+            udp_server_addr.sin_addr.s_addr = INADDR_BROADCAST;             // 255.255.255.255
+            break;
+
+        case 2: 
+            
+            ;
+            char *addr;
+            PRINT("IP: ")
+            scanf("%ms", &addr);
+            if(inet_aton(addr, &udp_server_addr.sin_addr) == 0) goto config_connection_loop;
+            free(addr);
+            break;
+
+        case 3:
+
+            ;
+            char *url;
+            struct hostent *hp;
+            PRINT("URL: ")
+            scanf("%ms", &url);
+            hp = gethostbyname(url);
+            if(hp == NULL) goto config_connection_loop;
+            bcopy(hp->h_addr, &udp_server_addr.sin_addr, hp->h_length);
+            free(url);
+            break;
+
+        default: goto config_connection_loop;
+    }
+    
+    sendto(udp_socket_client, NULL, 0, 0, (struct sockaddr *) &udp_server_addr, sizeof(udp_server_addr));
+    if(recvfrom(udp_socket_client, NULL, 0, MSG_TRUNC, (struct sockaddr *) &udp_server_addr, &udp_server_addr_len) == -1){
+        PRINT("Nessun server trovato\n")
+        goto config_connection_loop;
+    }
+
+    udp_server_addr.sin_port = ntohs(udp_server_addr.sin_port);
+    DEBUG("[DEBUG]: received answer from %s (port %d)\n", inet_ntoa(udp_server_addr.sin_addr), udp_server_addr.sin_port)
+    if(udp_server_addr.sin_port != 6501) {
+        PRINT("Server non valido\n")
+        goto config_connection_loop;
+    }
+
+    close(udp_socket_client);
+    addr_server.sin_addr.s_addr = udp_server_addr.sin_addr.s_addr;
 
     clientConnection();                     // CLIENT CONNECTION
 

@@ -26,7 +26,7 @@ all:
 	make server
 	make client
 
-.PHONY: init server client clean deploy
+.PHONY: init server client clean deploy remake
 
 init:
 	@false
@@ -46,3 +46,8 @@ clean:
 deploy: $(sort $(OBJS_SRV) $(OBJS_CLN))
 	$(CC) $(OBJS_SRV) -o server $(CFLAGS) -DPROD
 	$(CC) $(OBJS_CLN) -o client $(CFLAGS) -DPROD
+
+remake:
+	make clean
+	make server
+	make client

@@ -5,17 +5,24 @@ extern struct sockaddr_in addr_server;
 extern pthread_t *w_threads;
 
 extern uint8_t n_players;                                // Numero di giocatori in lobby
-extern player_t **players;                              // Array di giocatori
+extern player_t **players;                               // Array di giocatori
 
 static pthread_mutex_t mut[WAITING_THREADS];
 
+static int udp_socket_server;
+
 static void _sigusr1_waiting_handler(int sig, siginfo_t *dummy, void *dummy2) {
-    PRINT("[SERVER]: Waiting thread (%d) exited\n", gettid())
+    DEBUG("[SERVER]: Waiting thread (%d) exited\n", gettid())
     pthread_exit(NULL);
 }
 
 static void _sigusr2_waiting_handler(int sig, siginfo_t *dummy, void *dummy2) {
-    PRINT("[SERVER]: Waiting connection termination check (%d)\n", gettid())
+    DEBUG("[SERVER]: Waiting connection termination check (%d)\n", gettid())
+    for(size_t i=0; i<n_players; i++) {
+        if(players[i]->ready == false) return;
+    }
+    DEBUG("[SERVER]: Waiting connection terminated\n")
+    pthread_exit(NULL);
 }
 
 static void *_waiting_thread(void * args) {
@@ -107,13 +114,34 @@ void waitConnections(void)
     sigdelset(&set, SIGINT);
     sigprocmask(SIG_SETMASK, &set, NULL);
     
-    /* -- WAITING -- */
+    /* -- LOCAL CONNECTION -- */
+    /**
+     * Il thread attende un qualsiasi pacchetto UDP sulla porta 6501.
+     * Risponde di conseguenza sulla porta 6502 per notificare che è un server di battaglia navale
+    */
+
+    struct sockaddr_in udp_addr_server;
+
+    bzero((char*) &udp_addr_server, sizeof(udp_addr_server));
+    udp_addr_server.sin_family = AF_INET;
+    udp_addr_server.sin_port = htons(UDP_PORT_SRV);     // 6501
+    udp_addr_server.sin_addr.s_addr = ADDRESS;          // 0.0.0.0
+
+    udp_socket_server = socket(AF_INET, SOCK_DGRAM, 0);
+    setsockopt(udp_socket_server, SOL_SOCKET, SO_REUSEADDR, &(int) {1}, sizeof(int));
+    bind(udp_socket_server, (struct sockaddr *) &udp_addr_server, sizeof(udp_addr_server));
     
-waiting_loop:
-    pause();
-    for(size_t i=0; i<n_players; i++) {
-        if(players[i]->ready == false) goto waiting_loop;
-    }
-    PRINT("[SERVER]: Waiting connection terminated\n")
+    struct sockaddr_in udp_client_addr;
+    socklen_t socket_len;
+    bzero((char *) &udp_client_addr, sizeof(udp_client_addr));
+
+local_connection_loop:
+
+    recvfrom(udp_socket_server, NULL, 0, MSG_TRUNC, (struct sockaddr *) &udp_client_addr, &socket_len);
+    DEBUG("[DEBUG]: received request from %s (port %d)\n", inet_ntoa(udp_client_addr.sin_addr), ntohs(udp_client_addr.sin_port))
+    udp_client_addr.sin_port = htons(UDP_PORT_CLN);     // 6502
+    sendto(udp_socket_server, NULL, 0, 0, (struct sockaddr *) &udp_client_addr, sizeof(udp_client_addr));
+
+    goto local_connection_loop;
 
 }

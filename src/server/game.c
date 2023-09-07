@@ -101,6 +101,7 @@ void get_move(player_t *player, int ind){
         }
 
         next:
+        ;
     }
 
     bool elim = true;
