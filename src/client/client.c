@@ -36,15 +36,15 @@ int main(void) {
 
     bzero((char*) &addr_server, sizeof(addr_server));
     addr_server.sin_family = AF_INET;
-    addr_server.sin_port = htons(PORT);     // 6500
-    uint8_t config;
+    addr_server.sin_port = htons(PORT);                             // 6500
 
     int udp_socket_client;
     struct sockaddr_in udp_addr_client;
     bzero((char*) &udp_addr_client, sizeof(udp_addr_client));
     udp_addr_client.sin_family = AF_INET;
-    udp_addr_client.sin_port = htons(UDP_PORT_CLN);     // 6502
-    udp_addr_client.sin_addr.s_addr = ADDRESS;          // 0.0.0.0
+    udp_addr_client.sin_port = htons(UDP_PORT_CLN);                 // 6502
+    udp_addr_client.sin_addr.s_addr = ADDRESS;                      // 0.0.0.0
+
 
     struct sockaddr_in udp_server_addr;
     bzero((char *) &udp_server_addr, sizeof(udp_server_addr));
@@ -63,6 +63,8 @@ int main(void) {
 
     socklen_t udp_server_addr_len = sizeof(udp_server_addr);
 
+    uint8_t config;
+
     PRINT("Seleziona il server di gioco:\n\n")
     PRINT("\t[1] Ricerca nella rete locale\n")
     PRINT("\t[2] Inserisce ip manualmente\n")
@@ -76,7 +78,55 @@ config_connection_loop:
 
     switch(config) {
         case 1:
-            udp_server_addr.sin_addr.s_addr = INADDR_BROADCAST;             // 255.255.255.255
+
+            /* -- SHOW CLIENT NETWORK INTERFACES-- */
+
+            PRINT("Seleziona rete:\n\n")
+
+            struct ifaddrs *nics;
+            getifaddrs(&nics);
+            char *ip = (char*) malloc(sizeof(*ip) * 16);
+            char *brd = (char*) malloc(sizeof(*brd) * 16);
+            struct ifaddrs *nic = nics;
+
+            struct sockaddr_in **broadcast = (struct sockaddr_in **) malloc(sizeof(*broadcast) * 1);
+            size_t broadcast_len = 1, broadcast_counter = 0;
+
+            int counter = 1;
+            while(nic) {
+                if (nic->ifa_addr->sa_family == AF_INET) {  // Interfaccia IPV4
+                    getnameinfo(nic->ifa_addr, sizeof(struct sockaddr_in), ip, sizeof(*ip) * 16, 0, 0, NI_NUMERICHOST);
+                    getnameinfo(nic->ifa_broadaddr, sizeof(struct sockaddr_in), brd, sizeof(*brd) * 16, 0, 0, NI_NUMERICHOST);
+                    printf("\t[%d] %s -> %s\n", counter++, ip, brd);
+
+                    if(broadcast_counter == broadcast_len) {
+                        broadcast_len *= 2;
+                        broadcast = reallocarray(broadcast, broadcast_len, sizeof(*broadcast));
+                    }
+
+                    broadcast[broadcast_counter++] = (struct sockaddr_in *) nic->ifa_broadaddr;
+
+                }
+                nic = nic->ifa_next;
+            }
+
+            uint8_t net;
+network_loop:
+            PRINT("\nRete: ")
+            if(scanf("%hhu", &net) <= 0) {
+                while((getchar()) != '\n');
+                goto network_loop;
+            }
+
+            net--;
+            if(net >= broadcast_counter) goto network_loop;
+
+            udp_server_addr.sin_addr = broadcast[net]->sin_addr;                          // 255.255.255.255
+
+            freeifaddrs(nics);
+            free(ip);
+            free(brd);
+            free(broadcast);
             break;
 
         case 2: 

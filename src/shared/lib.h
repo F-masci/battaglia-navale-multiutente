@@ -6,6 +6,7 @@
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <netdb.h>
+#include <ifaddrs.h>
 #include <pthread.h>
 #include <signal.h>
 #include <sys/types.h>
@@ -25,10 +26,12 @@
 #define PRINT(...)  { printf(__VA_ARGS__); fflush(stdout); }
 
 #ifdef PROD
-#define DEBUG(...) {}
+#define PROD 1
 #else
-#define DEBUG(...) { printf(__VA_ARGS__); fflush(stdout); }
+#define PROD 0
 #endif
+
+#define DEBUG(...) { if(PROD) { printf(__VA_ARGS__); fflush(stdout); } }
 
 #define clrscr() PRINT("\033[1;1H\033[2J")
 
