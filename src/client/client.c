@@ -25,6 +25,7 @@
 struct sockaddr_in addr_server;
 int socket_client;
 cell_t **map;
+uint8_t num;
 
 #define BUFF_LEN 1024
 int main(void) {
@@ -127,7 +128,7 @@ config_connection_loop:
 
     mapInitialization();                   // MAP INITIALIZATION
     
-    gameInitialization();                  // INITIALIZATION OF DATA NEEDED FOR THE GAME
+    gameInitialization(0);                  // INITIALIZATION OF DATA NEEDED FOR THE GAME
 
     cmd_t cmd;
     char *buffer = (char *)malloc(sizeof(char) * BUFF_LEN);
@@ -146,13 +147,23 @@ wait_turn:
         printf("%s\n", message);
         waitNum(&alive);
         if(alive == 1) goto end;
-        else if(alive == 0) goto wait_turn;
+        else if(alive == 0){
+            gameInitialization(1);      //update nicknames
+            if(num == 1){
+                PRINT("Hai vinto!");
+                goto end;    
+            }
+            goto wait_turn;
+        }
     }
     else if(cmd == CMD_TURN){
 
+        clrscr();
         PRINT("È il tuo turno\n")
 
     main_loop:
+
+        //clrscr();
 
         PRINT("\nSeleziona un comando:\n\n")
         PRINT("\t[1] Visualizza mappe giocatori\n")

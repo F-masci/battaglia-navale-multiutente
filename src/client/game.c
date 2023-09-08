@@ -3,17 +3,19 @@
 extern int socket_client;
 
 char **nicknames; 
-uint8_t num;         //total number of players
+extern uint8_t num;         //total number of players
 uint8_t me;          //index of this client
 
-void gameInitialization(void){
+void gameInitialization(uint8_t time){
 
     char *encoded = NULL;
     waitNum((uint32_t *) &num);
     waitNum((uint32_t *) &me);
     waitString(&encoded);
 
-    nicknames = (char **) malloc(num * sizeof(char *));
+    if(time == 0) nicknames = (char **) malloc(num * sizeof(char *));
+    else nicknames = (char **) realloc(nicknames, num * sizeof(char *));
+    
     bzero(nicknames, num * sizeof(char *));
 
     char *token = NULL;

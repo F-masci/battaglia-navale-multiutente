@@ -115,11 +115,17 @@ void get_move(player_t *player, int ind){
 
     for(int j=0; j<n_players; j++){
         if(j==index){
-            if(elim) writeNum(players[index], 1);
+            if(elim){
+                writeNum(players[index], 1);
+                removePlayer(index);
+            }
             else writeNum(players[index], 0);
         }
         else writeNum(players[j], 0);
     }
+
+    //manda la lista aggiornata dei nicknames ai client
+    gameInitialization();
 
     return;
 }

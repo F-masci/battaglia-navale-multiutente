@@ -98,10 +98,14 @@ main_cmd_loop:
         default: goto main_cmd_loop;
     }
 
-    //qui il server invia comunicazioni ai client sullo stato del gioco
+    if(n_players == 1){
+        PRINT("[SERVER] player %s has won\n", players[0]->nickname)
+        goto done;
+    }
 
     index = (index+1)%n_players;
     goto main_loop;
 
+done:
     return EXIT_SUCCESS;
 }
