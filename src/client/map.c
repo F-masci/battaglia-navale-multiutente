@@ -7,6 +7,7 @@ int size=0;
 ship_t *ships;
 uint8_t *c; //counters for how many ships are left to place in the map
 uint8_t n;  // Total number of ships
+char letters[MAP_SIZE] = {'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J'};
 
 static void _place_ship(void);
 static void _delete_ship(void);
@@ -19,7 +20,7 @@ void printMap(void) {
 
     PRINT("\n    ");
     for(cell_t i=0; i<MAP_SIZE; i++){
-        PRINT(" %d  ", i);
+        PRINT(" %c  ", letters[i]); 
     }
     PRINT("\n    ");
     for(cell_t i=0; i<MAP_SIZE; i++){
@@ -28,7 +29,7 @@ void printMap(void) {
     PRINT("\n");
 
     for(cell_t i=0; i<MAP_SIZE; i++){
-        PRINT(" %d ", i);
+        PRINT(" %d ", i); 
         for(cell_t j=0; j<MAP_SIZE; j++) {
             switch(map[i][j]){
                 case '0':
@@ -107,6 +108,7 @@ map_init_loop:
                 return;
             } else {
                 PRINT("Inserisci prima tutte le navi\n")
+                sleep(2);
                 break;
             }
         default: break;
@@ -121,7 +123,7 @@ map_init_loop:
 
 static void _place_ship(void) {
 
-    char dir;
+    char dir, let;
     uint8_t cmd, dim;
     cell_t x, y;
 
@@ -161,12 +163,24 @@ place_ship_loop:
 
         //coordinates go from 0 to MAP_SIZE-1
 retry_choice:
-        PRINT("Scegli coordinate [x y]: ");
-        if(scanf("%hhu %hhu", &x, &y) <= 0) {
+        PRINT("Scegli cella [x y]: ");
+        if(scanf("%c %hhu", &let, &y) <= 0) {
             while((getchar()) != '\n');
             goto retry_choice;
         }
         while((getchar()) != '\n');
+
+        PRINT("%c %hhu\n", let, y);
+
+        //convert letter to coordinate in map
+        for(uint8_t j=0; j<MAP_SIZE; j++){
+            if(toupper(let) == letters[j]){
+                x = j;
+                break;
+            }
+        }
+
+        PRINT("%hhu\n", x);
 
         PRINT("Scegli direzione [W/A/S/D]: ");
         if(scanf("%c", &dir) <= 0) {
@@ -242,10 +256,10 @@ static void _delete_ship(void) {
         PRINT("\t[%d] ", i);
         switch(ships[i].dim){
             case 2:
-                PRINT("DESTROYER (%d,%d)\n", ships[i].x, ships[i].y);
+                PRINT("DESTROYER (%c%d)\n", letters[ships[i].x], ships[i].y);
                 break;
             case 3:
-                PRINT("SUBMARINE (%d,%d)\n", ships[i].x, ships[i].y);
+                PRINT("SUBMARINE (%c%d)\n", letters[ships[i].x], ships[i].y);
                 break;
             case 4:
                 PRINT("BATTLESHIP\n");

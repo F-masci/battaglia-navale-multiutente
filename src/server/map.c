@@ -1,5 +1,7 @@
 #include "map.h"
 
+cell_t letters[MAP_SIZE] = {'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J'};
+
 void initPlayerMap(player_t *player) {
     map_t *map = (map_t *) malloc(sizeof(map_t));
     bzero(map, sizeof(*map));
@@ -19,9 +21,9 @@ void printMap(cell_t **map) {
     PRINT("\n    ");
 
     for(cell_t i=0; i<MAP_SIZE; i++){
-        PRINT(" %d  ", i);
+        PRINT(" %c  ", letters[i]); 
     }
-
+    
     PRINT("\n    ");
 
     for(cell_t i=0; i<MAP_SIZE; i++){
