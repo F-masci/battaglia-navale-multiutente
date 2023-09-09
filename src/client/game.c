@@ -13,8 +13,12 @@ void gameInitialization(uint8_t time){
     waitNum((uint32_t *) &me);
     waitString(&encoded);
 
+    DEBUG("check 1\n");
+
     if(time == 0) nicknames = (char **) malloc(num * sizeof(char *));
-    else nicknames = (char **) realloc(nicknames, num * sizeof(char *));
+    else nicknames = realloc(nicknames, num * sizeof(char *));
+
+    DEBUG("check 2\n");
     
     bzero(nicknames, num * sizeof(char *));
 
@@ -24,7 +28,9 @@ void gameInitialization(uint8_t time){
     token = strtok(encoded, ";");
 
     while(token != NULL && p < num){
-        nicknames[p] = (char *) malloc(NICKNAME_LEN * sizeof(char));
+        if(time == 0) nicknames[p] = (char *) malloc(NICKNAME_LEN * sizeof(char));
+        else nicknames[p] = realloc(nicknames + (p * NICKNAME_LEN), NICKNAME_LEN * sizeof(char));   //sistemare errore invalid pointer
+        DEBUG("check 3\n");
         bzero(nicknames[p], NICKNAME_LEN * sizeof(char));
         memcpy(nicknames[p++], token, strlen(token));
         token = strtok(NULL, ";");
@@ -51,7 +57,7 @@ void make_move(void){
 
     //mental note: check coordinates values
 
-    PRINT("\nCoordinata x: ");
+    PRINT("Coordinata x: ");
 retry_x:
     if(scanf("%hhu", &x)<=0){
         while((getchar()) != '\n');

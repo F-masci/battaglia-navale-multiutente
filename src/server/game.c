@@ -50,9 +50,12 @@ void get_move(player_t *player, int ind){
         players[index]->map->grid[y1][x1] = '2';
         sprintf(message, "%s ha colpito %s [%hhu; %hhu]\n", players[ind]->nickname, players[index]->nickname, x1, y1);
     }
-    else if(players[index]->map->grid[y1][x1] == '0'){
+    else if(players[index]->map->grid[y1][x1] == '0' || players[index]->map->grid[y1][x1] == '3'){
         players[index]->map->grid[y1][x1] = '3';
-        sprintf(message, "%s ha colpito a vuoto %s [%hhu; %hhu]\n", players[ind]->nickname, players[index]->nickname, x1, y1);
+        sprintf(message, "%s ha mancato %s [%hhu; %hhu]\n", players[ind]->nickname, players[index]->nickname, x1, y1);
+    }
+    else if(players[index]->map->grid[y1][x1] == '2'){
+        sprintf(message, "%s ha colpito una parte di una nave di %s già colpita [%hhu; %hhu]\n", players[ind]->nickname, players[index]->nickname, x1, y1);
     }
 
     for(int h=0; h<n_players; h++){
@@ -62,6 +65,8 @@ void get_move(player_t *player, int ind){
 
     //il server esegue il controllo 
     int x, y, dim;
+    
+    bzero(message, BUFF_LEN);
 
     //aggiorna 
     for(int k=0; k<SHIPS_NUM; k++){
@@ -100,9 +105,35 @@ void get_move(player_t *player, int ind){
             }
         }
 
+        switch(dim){
+            case 2:
+                sprintf(message, "%s ha affondato DESTROYER di %s\n", players[ind]->nickname, players[index]->nickname);
+                break;
+            case 3:
+                sprintf(message, "%s ha affondato SUBMARINE di %s\n", players[ind]->nickname, players[index]->nickname);
+                break;
+            case 4:
+                sprintf(message, "%s ha affondato BATTLESHIP di %s\n", players[ind]->nickname, players[index]->nickname);
+                break;
+            case 5:
+                sprintf(message, "%s ha affondato CARRIER di %s\n", players[ind]->nickname, players[index]->nickname);
+                break;
+            default: break;
+        }
+
+        goto send;
+
         next:
         ;
     }
+
+    sprintf(message, "%s non ha affondato nessuna nave di %s\n", players[ind]->nickname, players[index]->nickname);
+
+send:
+
+    for(int h=0; h<n_players; h++){
+        writeString(players[h], message);
+    }    
 
     bool elim = true;
 
@@ -124,8 +155,7 @@ void get_move(player_t *player, int ind){
         else writeNum(players[j], 0);
     }
 
-    //manda la lista aggiornata dei nicknames ai client
-    gameInitialization();
+    gameInitialization();   //manda la lista aggiornata dei nicknames ai client
 
     return;
 }

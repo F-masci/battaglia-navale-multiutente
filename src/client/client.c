@@ -195,8 +195,14 @@ wait_turn:
     if(cmd == CMD_STATUS){
         waitString(&message);
         printf("%s\n", message);
+        bzero(message, BUFF_LEN);
+        waitString(&message);
+        printf("%s\n", message);
         waitNum(&alive);
-        if(alive == 1) goto end;
+        if(alive == 1){
+            PRINT("Hai perso\n");
+            goto end;
+        }
         else if(alive == 0){
             gameInitialization(1);      //update nicknames
             if(num == 1){
