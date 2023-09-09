@@ -72,7 +72,7 @@ void waitConnections(void)
     sigprocmask(SIG_SETMASK, &set, NULL);
     
     struct sigaction sa;
-    bzero(&sa, sizeof(sa));
+    BZERO(&sa, sizeof(sa));
     sa.sa_sigaction = _sigusr1_waiting_handler;
     sa.sa_mask = set;
     sa.sa_flags = 0;
@@ -80,7 +80,7 @@ void waitConnections(void)
     sigaction(SIGUSR1, &sa, NULL);
 
     sigemptyset(&set);
-    bzero(&sa, sizeof(sa));
+    BZERO(&sa, sizeof(sa));
     sa.sa_sigaction = _sigusr2_waiting_handler;
     sa.sa_mask = set;
     sa.sa_flags = 0;
@@ -123,7 +123,7 @@ void waitConnections(void)
 
     struct sockaddr_in local_server_addr;
 
-    bzero((char*) &local_server_addr, sizeof(local_server_addr));
+    BZERO((char*) &local_server_addr, sizeof(local_server_addr));
     local_server_addr.sin_family = AF_INET;
     local_server_addr.sin_port = htons(UDP_PORT_SRV);     // 6501
     local_server_addr.sin_addr.s_addr = ADDRESS;          // 0.0.0.0
@@ -134,7 +134,7 @@ void waitConnections(void)
     
     struct sockaddr_in client_addr;
     socklen_t socket_len;
-    bzero((char *) &client_addr, sizeof(client_addr));
+    BZERO((char *) &client_addr, sizeof(client_addr));
 
 local_connection_loop:
 

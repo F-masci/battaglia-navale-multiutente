@@ -7,7 +7,7 @@ void gameInitialization(void){
 
     size_t nick_len;
     char *encoded = (char *) malloc((n_players * NICKNAME_LEN + 1) * sizeof(*encoded));
-    bzero(encoded, (n_players * NICKNAME_LEN + 1) * sizeof(*encoded));
+    BZERO(encoded, (n_players * NICKNAME_LEN + 1) * sizeof(*encoded));
 
     char *cur = encoded;
 
@@ -32,7 +32,7 @@ void get_move(player_t *player){
     uint8_t index, x1, y1;
     int i;
     char *message = (char *) malloc(BUFF_LEN * sizeof(*message));
-    bzero(message, BUFF_LEN * sizeof(*message));
+    BZERO(message, BUFF_LEN * sizeof(*message));
 
     char *encoded_move = NULL;
 
@@ -62,7 +62,7 @@ void get_move(player_t *player){
     //il server esegue il controllo 
     int x, y, dim;
     
-    bzero(message, BUFF_LEN);
+    BZERO(message, BUFF_LEN);
 
     //aggiorna 
     for(int k=0; k<SHIPS_NUM; k++){
@@ -168,7 +168,7 @@ void send_maps(player_t *player){
     // +
     // 1 => terminatore di stringa
     char *encoded = (char *) malloc(((n_players * MAP_SIZE * MAP_SIZE) + n_players + 1) * sizeof(*encoded));
-    bzero(encoded, ((n_players * MAP_SIZE * MAP_SIZE) + n_players + 1) * sizeof(*encoded));
+    BZERO(encoded, ((n_players * MAP_SIZE * MAP_SIZE) + n_players + 1) * sizeof(*encoded));
 
     DEBUG("[DEBUG]: allocated %ld bytes\n", ((n_players * MAP_SIZE * MAP_SIZE) + n_players + 1) * sizeof(*encoded))
 
@@ -200,7 +200,7 @@ void send_map(player_t *player){
     // +
     // 1 => terminatore di stringa
     char *encoded = (char *) malloc((MAP_SIZE * MAP_SIZE + 1) * sizeof(*encoded));
-    bzero(encoded, (MAP_SIZE * MAP_SIZE + 1) * sizeof(*encoded));
+    BZERO(encoded, (MAP_SIZE * MAP_SIZE + 1) * sizeof(*encoded));
 
     DEBUG("[DEBUG]: allocated %ld bytes\n", (MAP_SIZE * MAP_SIZE + 1) * sizeof(*encoded))
     

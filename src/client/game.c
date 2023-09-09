@@ -20,7 +20,7 @@ void gameInitialization(uint8_t time){
 
     DEBUG("check 2\n");
     
-    bzero(nicknames, num * sizeof(char *));
+    BZERO(nicknames, num * sizeof(char *));
 
     char *token = NULL;
     uint8_t p = 0;
@@ -31,7 +31,7 @@ void gameInitialization(uint8_t time){
         if(time == 0) nicknames[p] = (char *) malloc(NICKNAME_LEN * sizeof(char));
         else nicknames[p] = realloc(nicknames + (p * NICKNAME_LEN), NICKNAME_LEN * sizeof(char));   //sistemare errore invalid pointer
         DEBUG("check 3\n");
-        bzero(nicknames[p], NICKNAME_LEN * sizeof(char));
+        BZERO(nicknames[p], NICKNAME_LEN * sizeof(char));
         memcpy(nicknames[p++], token, strlen(token));
         token = strtok(NULL, ";");
     }
@@ -47,7 +47,7 @@ void gameInitialization(uint8_t time){
 void make_move(void){
 
     char *encoded_move = (char *) malloc(4 * sizeof(char)); 
-    bzero(encoded_move, 4 * sizeof(char));
+    BZERO(encoded_move, 4 * sizeof(char));
 
     uint8_t x, y;
 

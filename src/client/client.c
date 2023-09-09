@@ -34,20 +34,20 @@ int main(void) {
 
     /* -- CONFIG SERVER ADDRESS -- */
 
-    bzero((char*) &addr_server, sizeof(addr_server));
+    BZERO((char*) &addr_server, sizeof(addr_server));
     addr_server.sin_family = AF_INET;
     addr_server.sin_port = htons(PORT);                             // 6500
 
     int udp_socket_client;
     struct sockaddr_in udp_addr_client;
-    bzero((char*) &udp_addr_client, sizeof(udp_addr_client));
+    BZERO((char*) &udp_addr_client, sizeof(udp_addr_client));
     udp_addr_client.sin_family = AF_INET;
     udp_addr_client.sin_port = htons(UDP_PORT_CLN);                 // 6502
     udp_addr_client.sin_addr.s_addr = ADDRESS;                      // 0.0.0.0
 
 
     struct sockaddr_in udp_server_addr;
-    bzero((char *) &udp_server_addr, sizeof(udp_server_addr));
+    BZERO((char *) &udp_server_addr, sizeof(udp_server_addr));
     udp_server_addr.sin_family = AF_INET;
     udp_server_addr.sin_port = htons(UDP_PORT_SRV);                 // 6501
 
@@ -195,7 +195,7 @@ wait_turn:
     if(cmd == CMD_STATUS) {
         waitString(&message);
         printf("%s\n", message);
-        bzero(message, BUFF_LEN);
+        BZERO(message, BUFF_LEN);
         waitString(&message);
         printf("%s\n", message);
         waitNum(&alive);
@@ -232,7 +232,7 @@ wait_turn:
             goto main_loop;
         }
 
-        bzero(buffer, BUFF_LEN);
+        BZERO(buffer, BUFF_LEN);
         switch(cmd) {
             case 1: 
                 sendCmd(CMD_GET_MAPS);

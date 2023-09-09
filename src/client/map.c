@@ -315,7 +315,7 @@ static void _send_map(void) {
     sendCmd(CMD_SEND_MAP);
 
     char *ships_encoded = (char *) malloc( n * sizeof(*ships) + 1);        // Calcolo lo spazio di cui ho bisogno per rappresentare le navi + il terminatore
-    bzero(ships_encoded, sizeof(n * sizeof(*ships) + 1));
+    BZERO(ships_encoded, sizeof(n * sizeof(*ships) + 1));
 
     char *cur = ships_encoded;
 

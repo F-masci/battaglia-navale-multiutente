@@ -7,7 +7,7 @@ extern uint8_t n_players;                                // Numero di giocatori 
 player_t *createPlayer(int socket) {
 
     player_t *player = (player_t *) malloc(sizeof(*player));
-    bzero(player, sizeof(*player));
+    BZERO(player, sizeof(*player));
     player->socket = socket;
     player->ready = false;
     initPlayerMap(player);
@@ -49,7 +49,7 @@ bool setNicknamePlayer(size_t index, char *nickname) {
     errno = 0;
     size_t len = strlen(nickname);
     if(len > NICKNAME_LEN-1) return false;
-    bzero(players[index]->nickname, NICKNAME_LEN);
+    BZERO(players[index]->nickname, NICKNAME_LEN);
     memcpy(players[index]->nickname, nickname, len);
     return true;
 }

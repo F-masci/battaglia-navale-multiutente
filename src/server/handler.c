@@ -31,7 +31,7 @@ handler_loop:
 
             case CMD_LIST_PLAYERS: 
                 buffer = (char *) malloc(sizeof(*buffer) * BUFF_LEN);
-                bzero(buffer, BUFF_LEN);
+                BZERO(buffer, BUFF_LEN);
                 for(uint8_t i=0; i<n_players; i++) {
                     strcat(buffer, players[i]->nickname);
                     strcat(buffer, ";");
@@ -72,7 +72,7 @@ handler_loop:
                 PRINT("[%s]: Map received\n", player->nickname);
 
                 struct sembuf so;
-                bzero(&so, sizeof(so));
+                BZERO(&so, sizeof(so));
                 so.sem_num = 0;
                 so.sem_op = 1;
                 so.sem_flg = 0;

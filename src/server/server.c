@@ -39,7 +39,7 @@ int main() {
 
     /* -- CONFIG SERVER ADDRESS -- */
 
-    bzero((char*) &addr_server, sizeof(addr_server));
+    BZERO((char*) &addr_server, sizeof(addr_server));
     addr_server.sin_family = AF_INET;
     addr_server.sin_port = htons(PORT);     // 6500
     addr_server.sin_addr.s_addr = ADDRESS;  // 0.0.0.0
@@ -51,7 +51,7 @@ int main() {
     semctl(semid, (int) 0, SETVAL, 0);
 
     struct sembuf so;
-    bzero(&so, sizeof(so));
+    BZERO(&so, sizeof(so));
     so.sem_num = 0;
     so.sem_op = (short) -n_players;
     so.sem_flg = 0;

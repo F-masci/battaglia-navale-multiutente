@@ -28,7 +28,7 @@ bool waitString(player_t *player, char **ptr) {
     PRINT("[SERVER]: waiting string of %d chars\n", len);
 
     char *buffer = (char *) malloc(sizeof(*buffer) * (len+1));
-    bzero(buffer, len+1);   // Il carattere in più è per il terminatore
+    BZERO(buffer, len+1);   // Il carattere in più è per il terminatore
     if(recv(player->socket, buffer, len, MSG_WAITALL) < (ssize_t) len) return false;
     PRINT("[SERVER]: %s (%ld)\n", buffer, strlen(buffer))
     *ptr = buffer;

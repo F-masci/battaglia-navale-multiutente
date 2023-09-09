@@ -3,7 +3,7 @@
 
 void initPlayerMap(player_t *player) {
     map_t *map = (map_t *) malloc(sizeof(map_t));
-    bzero(map, sizeof(*map));
+    BZERO(map, sizeof(*map));
 
     map->grid = (cell_t **) malloc(sizeof(cell_t *) * MAP_SIZE);
     for(uint8_t i=0; i<MAP_SIZE; i++) {
