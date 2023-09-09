@@ -10,7 +10,6 @@ extern player_t **players;                               // Array di giocatori
 static pthread_mutex_t mut[WAITING_THREADS];
 
 static bool stop_server = false;
-static int udp_socket_server;
 
 static void _sigusr1_waiting_handler(int sig, siginfo_t *dummy, void *dummy2) {
     DEBUG("[SERVER]: Waiting thread (%d) exited\n", gettid())
@@ -122,31 +121,31 @@ void waitConnections(void)
      * Risponde di conseguenza sulla porta 6502 per notificare che è un server di battaglia navale
     */
 
-    struct sockaddr_in udp_addr_server;
+    struct sockaddr_in local_server_addr;
 
-    bzero((char*) &udp_addr_server, sizeof(udp_addr_server));
-    udp_addr_server.sin_family = AF_INET;
-    udp_addr_server.sin_port = htons(UDP_PORT_SRV);     // 6501
-    udp_addr_server.sin_addr.s_addr = ADDRESS;          // 0.0.0.0
+    bzero((char*) &local_server_addr, sizeof(local_server_addr));
+    local_server_addr.sin_family = AF_INET;
+    local_server_addr.sin_port = htons(UDP_PORT_SRV);     // 6501
+    local_server_addr.sin_addr.s_addr = ADDRESS;          // 0.0.0.0
 
-    udp_socket_server = socket(AF_INET, SOCK_DGRAM, 0);
-    setsockopt(udp_socket_server, SOL_SOCKET, SO_REUSEADDR, &(int) {1}, sizeof(int));
-    bind(udp_socket_server, (struct sockaddr *) &udp_addr_server, sizeof(udp_addr_server));
+    int local_server_socket = socket(AF_INET, SOCK_DGRAM, 0);
+    setsockopt(local_server_socket, SOL_SOCKET, SO_REUSEADDR, &(int) {1}, sizeof(int));
+    bind(local_server_socket, (struct sockaddr *) &local_server_addr, sizeof(local_server_addr));
     
-    struct sockaddr_in udp_client_addr;
+    struct sockaddr_in client_addr;
     socklen_t socket_len;
-    bzero((char *) &udp_client_addr, sizeof(udp_client_addr));
+    bzero((char *) &client_addr, sizeof(client_addr));
 
 local_connection_loop:
 
     if(stop_server) {
-        close(udp_socket_server);
+        close(local_server_socket);
         return;
     }
-    if(recvfrom(udp_socket_server, NULL, 0, MSG_TRUNC, (struct sockaddr *) &udp_client_addr, &socket_len) == -1) goto local_connection_loop;
-    DEBUG("[DEBUG]: received request from %s (port %d)\n", inet_ntoa(udp_client_addr.sin_addr), ntohs(udp_client_addr.sin_port))
-    udp_client_addr.sin_port = htons(UDP_PORT_CLN);     // 6502
-    sendto(udp_socket_server, NULL, 0, 0, (struct sockaddr *) &udp_client_addr, sizeof(udp_client_addr));
+    if(recvfrom(local_server_socket, NULL, 0, MSG_TRUNC, (struct sockaddr *) &client_addr, &socket_len) == -1) goto local_connection_loop;
+    DEBUG("[DEBUG]: received request from %s (port %d)\n", inet_ntoa(client_addr.sin_addr), ntohs(client_addr.sin_port))
+    client_addr.sin_port = htons(UDP_PORT_CLN);     // 6502
+    sendto(local_server_socket, NULL, 0, 0, (struct sockaddr *) &client_addr, sizeof(client_addr));
 
     goto local_connection_loop;
 

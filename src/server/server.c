@@ -24,7 +24,7 @@
 int socket_server;
 struct sockaddr_in addr_server;
 
-uint8_t n_players = 0;                           // Numero di giocatori in lobby
+uint8_t n_players = 0;                          // Numero di giocatori in lobby
 player_t **players = NULL;                      // Array di puntatori ai metadati dei giocatori
 pthread_t *w_threads;                           // Waiting threads
 int semid;                                      // Sempahore to sync map receive
@@ -53,7 +53,7 @@ int main() {
     struct sembuf so;
     bzero(&so, sizeof(so));
     so.sem_num = 0;
-    so.sem_op = -n_players;
+    so.sem_op = (short) -n_players;
     so.sem_flg = 0;
     semop(semid, &so, 1);
 
@@ -81,7 +81,7 @@ main_cmd_loop:
     switch(cmd) {
 
         case CMD_GET_MAPS: 
-            send_maps(players[index], index);
+            send_maps(players[index]);
             goto main_cmd_loop;
 
         case CMD_GET_MAP:
@@ -89,7 +89,7 @@ main_cmd_loop:
             goto main_cmd_loop;
 
         case CMD_MOVE:
-            get_move(players[index], index);
+            get_move(players[index]);
             break;
 
         case CMD_ERROR:
@@ -100,12 +100,12 @@ main_cmd_loop:
 
     if(n_players == 1){
         PRINT("[SERVER] player %s has won\n", players[0]->nickname)
-        goto done;
+        return EXIT_SUCCESS;
     }
 
     index = (index+1)%n_players;
     goto main_loop;
 
-done:
     return EXIT_SUCCESS;
+
 }

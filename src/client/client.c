@@ -192,7 +192,7 @@ wait_turn:
     //prima di ogni turno il client riceve comunicazioni dal server
 
     cmd = waitCmd();
-    if(cmd == CMD_STATUS){
+    if(cmd == CMD_STATUS) {
         waitString(&message);
         printf("%s\n", message);
         bzero(message, BUFF_LEN);
@@ -201,13 +201,13 @@ wait_turn:
         waitNum(&alive);
         if(alive == 1){
             PRINT("Hai perso\n");
-            goto end;
+            return EXIT_SUCCESS;
         }
         else if(alive == 0){
             gameInitialization(1);      //update nicknames
             if(num == 1){
                 PRINT("Hai vinto!");
-                goto end;    
+                return EXIT_SUCCESS;
             }
             goto wait_turn;
         }
@@ -254,8 +254,7 @@ wait_turn:
     }
     else goto wait_turn;
 
-end:
-    return 0;
+    return EXIT_SUCCESS;
 
 }
 #undef BUFF_LEN
