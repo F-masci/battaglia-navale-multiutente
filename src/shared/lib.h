@@ -26,9 +26,9 @@
 #define PRINT(...)  { printf(__VA_ARGS__); fflush(stdout); }
 
 #ifdef PROD
-#define PROD 1
-#else
 #define PROD 0
+#else
+#define PROD 1
 #endif
 
 #define DEBUG(...) { if(PROD) { printf(__VA_ARGS__); fflush(stdout); } }

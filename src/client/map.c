@@ -7,7 +7,6 @@ int size=0;
 ship_t *ships;
 uint8_t *c; //counters for how many ships are left to place in the map
 uint8_t n;  // Total number of ships
-char letters[MAP_SIZE] = {'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J'};
 
 static void _place_ship(void);
 static void _delete_ship(void);
@@ -20,7 +19,7 @@ void printMap(void) {
 
     PRINT("\n    ");
     for(cell_t i=0; i<MAP_SIZE; i++){
-        PRINT(" %c  ", letters[i]); 
+        PRINT(" %c  ", 'A' + i); 
     }
     PRINT("\n    ");
     for(cell_t i=0; i<MAP_SIZE; i++){
@@ -94,6 +93,7 @@ map_init_loop:
         while((getchar()) != '\n');
         goto map_init_loop;
     }
+    while((getchar()) != '\n');
     
     switch(cmd) {
         case 1:
@@ -123,7 +123,7 @@ map_init_loop:
 
 static void _place_ship(void) {
 
-    char dir, let;
+    char dir;
     uint8_t cmd, dim;
     cell_t x, y;
 
@@ -140,6 +140,7 @@ place_ship_loop:
             while((getchar()) != '\n');
             goto place_ship_loop;
         }
+        while((getchar()) != '\n');
 
         switch(cmd){
             case 1:
@@ -163,24 +164,19 @@ place_ship_loop:
 
         //coordinates go from 0 to MAP_SIZE-1
 retry_choice:
-        PRINT("Scegli cella [x y]: ");
-        if(scanf("%c %hhu", &let, &y) <= 0) {
+        PRINT("Scegli cella [es. A 0]: ");
+        if(scanf("%c %hhu", &x, &y) <= 0) {
             while((getchar()) != '\n');
             goto retry_choice;
         }
         while((getchar()) != '\n');
 
-        PRINT("%c %hhu\n", let, y);
+        DEBUG("%c %hhu\n", x, y);
 
         //convert letter to coordinate in map
-        for(uint8_t j=0; j<MAP_SIZE; j++){
-            if(toupper(let) == letters[j]){
-                x = j;
-                break;
-            }
-        }
+        x = toupper(x) - 'A';
 
-        PRINT("%hhu\n", x);
+        DEBUG("%hhu %hhu\n", x, y);
 
         PRINT("Scegli direzione [W/A/S/D]: ");
         if(scanf("%c", &dir) <= 0) {
@@ -256,10 +252,10 @@ static void _delete_ship(void) {
         PRINT("\t[%d] ", i);
         switch(ships[i].dim){
             case 2:
-                PRINT("DESTROYER (%c%d)\n", letters[ships[i].x], ships[i].y);
+                PRINT("DESTROYER (%c%d)\n", ships[i].x + 'A', ships[i].y);
                 break;
             case 3:
-                PRINT("SUBMARINE (%c%d)\n", letters[ships[i].x], ships[i].y);
+                PRINT("SUBMARINE (%c%d)\n", ships[i].x + 'A', ships[i].y);
                 break;
             case 4:
                 PRINT("BATTLESHIP\n");
