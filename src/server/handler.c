@@ -1,66 +1,96 @@
 #include "handler.h"
 
-extern uint8_t n_players;                                // Numero di giocatori in lobby
-extern player_t **players;                              // Array di giocatori
+extern uint8_t n_players;                               // Numero di giocatori in lobby
+extern player_t **players;                              // Array di puntatori ai metadati dei giocatori
 
 extern pthread_t *w_threads;                            // Waiting threads
-extern int semid;
+extern int semid;                                       // Semaforo per sincronizzare la ricezione delle mappe
 
-#define BUFF_LEN 1024
-void *clientHandler(void *socket_addr) {
+void *clientHandler(void *_ptr) {
 
-    player_t *player = createPlayer( *( (int *) socket_addr) );
-    addPlayer(player);
-    sprintf(player->nickname, "Giocatore %lu", player->index + 1);
+    errno = 0;
 
-    cmd_t cmd;
+    int socket = *( (int *) _ptr);
+    player_t *player = createPlayer(socket);
+    if(player == NULL) {
+        CHECK_ERRNO("Error")
+        return NULL;
+    }
 
-    char *buffer = NULL;
+    if(!addPlayer(player)) {
+        CHECK_ERRNO("Error")
+        return NULL;
+    }
+
+    if(sprintf(player->nickname, "Giocatore %lu", player->index + 1) <= -1) {
+        CHECK_ERRNO("Error")
+        return NULL;
+    };
+
+    cmd_t cmd;                  // Contiene il comando selezionato dal giocatore
+    char *buffer = NULL;        // Buffer di appoggio per la lettura/ricezione di stringhe
 
 handler_loop:
         cmd = waitCmd(player);
         if(cmd == CMD_ERROR) goto handler_exit;
         PRINT("[%s]: request command %hhu\n", player->nickname, cmd)
         switch(cmd) {
+
             case CMD_SET_NICKNAME: 
-                if(waitString(player, &buffer) == false) goto handler_exit;
+                if(!waitString(player, &buffer)) {
+                    CHECK_ERRNO("Error")
+                    goto handler_exit;
+                }
                 PRINT("[%s]: set nickname ", player->nickname)
-                if(setNicknamePlayer(player->index, buffer)) PRINT("%s\n", player->nickname)
+                if(setNicknamePlayer(player->index, buffer)) {
+                    PRINT("%s\n", player->nickname)
+                } else {
+                    CHECK_ERRNO("Error")
+                    goto handler_exit;
+                }
                 free(buffer);
                 break;
 
             case CMD_LIST_PLAYERS: 
-                buffer = (char *) malloc(sizeof(*buffer) * BUFF_LEN);
-                BZERO(buffer, BUFF_LEN);
+                buffer = (char *) malloc(sizeof(*buffer) * (n_players * NICKNAME_LEN + 1));
+                BZERO(buffer, sizeof(*buffer) * n_players * NICKNAME_LEN);
+                DEBUG("[DEBUG]: allocated %ld bytes for players list\n", sizeof(*buffer) * (n_players * NICKNAME_LEN + 1))
                 for(uint8_t i=0; i<n_players; i++) {
                     strcat(buffer, players[i]->nickname);
                     strcat(buffer, ";");
                 }
-                writeString(player, buffer);
+                if(!writeString(player, buffer)) {
+                    CHECK_ERRNO("Error")
+                    goto handler_exit;
+                };
                 free(buffer);
                 break;
 
             case CMD_START_GAME:
                 player->ready = true;
-                for(size_t i=0; i<n_players; i++) {
+                for(uint8_t i=0; i<n_players; i++) {
                     if(players[i]->ready == false) goto handler_loop;
                 }
 
                 PRINT("[SERVER]: all players ready\n")
                 for(size_t i=0; i<WAITING_THREADS; i++) {
-                    pthread_kill(w_threads[i], SIGUSR1);
+                    if(pthread_kill(w_threads[i], SIGUSR1) != 0) EXIT_ERRNO
                 }
-                kill(getpid(), SIGUSR2);
+                free(w_threads);
+                if(kill(getpid(), SIGUSR2) == -1) EXIT_ERRNO
 
                 for(size_t i=0; i<n_players; i++) {
-                    sendCmd(players[i], CMD_START_GAME);
+                    if(!sendCmd(players[i], CMD_START_GAME)) EXIT_ERRNO
                 }
                 break;
 
             case CMD_SEND_MAP:
-                waitString(player, &buffer);
+                if(!waitString(player, &buffer)) {
+                    CHECK_ERRNO("Error")
+                    goto handler_exit;
+                }
                 char *cur = buffer;
-                for(int k=0; k<SHIPS_NUM; k++) {
+                for(uint8_t k=0; k<SHIPS_NUM; k++) {
                     player->map->ships[k].dim = (uint8_t) *cur++ - '0';
                     player->map->ships[k].x = (uint8_t) *cur++ - '0';
                     player->map->ships[k].y = (uint8_t) *cur++ - '0';
@@ -69,7 +99,9 @@ handler_loop:
                 }
 
                 makeMap(player);
-                PRINT("[%s]: Map received\n", player->nickname);
+                PRINT("[%s]: Ships recived and map created\n", player->nickname);
+
+                // Utilizzo il semaforo per notificare al server che la mappa relativa a questo giocatore è stata ricevuta
 
                 struct sembuf so;
                 BZERO(&so, sizeof(so));
@@ -88,12 +120,10 @@ handler_loop:
 
 handler_exit:
     PRINT("[%s]: disconnected\n", player->nickname)
-    sendCmd(player, CMD_CLOSE_CONNECTION);
+    if(!sendCmd(player, CMD_CLOSE_CONNECTION)) EXIT_ERRNO;
     removePlayer(player->index);
-    free(player);
-    free(buffer);
+    if(buffer != NULL) free(buffer);
 
     return NULL;
 
 }
-#undef BUFF_LEN

@@ -38,3 +38,6 @@
 #define CHAR_FOR_BYTES(bytes) ( (uint8_t) ceil(log10(pow(2., 8 * (double) bytes))) )
 
 #define BZERO(ptr, s) memset(ptr, 0, s)
+
+#define EXIT_ERRNO { if(errno != 0 && errno != EINTR) { perror("Error:"); exit(EXIT_FAILURE); } }
+#define CHECK_ERRNO(err) if(errno != 0) { perror("Error"); errno = 0; } else { fprintf(stderr, err); }

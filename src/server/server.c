@@ -21,21 +21,44 @@
 
 #include "server.h"
 
-int socket_server;
-struct sockaddr_in addr_server;
+int socket_server;                              // Socket per il collegamento dei client al server
+struct sockaddr_in addr_server;                 // Indirizzo del socket del server
 
 uint8_t n_players = 0;                          // Numero di giocatori in lobby
 player_t **players = NULL;                      // Array di puntatori ai metadati dei giocatori
 pthread_t *w_threads;                           // Waiting threads
-int semid;                                      // Sempahore to sync map receive
+int semid = -1;                                 // Semaforo per sincronizzare la ricezione delle mappe
+
+static void _sigint_main_handler(int sig, siginfo_t *dummy, void *dummy2) {
+    PRINT("[SERVER]: application exit for SIGINT\n")
+    DEBUG("[DEBUG]: closing sem %d\n", semid);
+    if(semid != -1 && semctl(semid, 0, IPC_RMID) == -1) EXIT_ERRNO
+    exit(EXIT_SUCCESS);
+}
 
 int main() {
 
+    /* -- SIGINT HANDLER -- */
+
+    sigset_t set;
+    sigfillset(&set);
+    sigdelset(&set, SIGINT);
+    sigprocmask(SIG_SETMASK, &set, NULL);
+    
+    struct sigaction sa;
+    BZERO(&sa, sizeof(sa));
+    sa.sa_sigaction = _sigint_main_handler;
+    sa.sa_mask = set;
+    sa.sa_flags = 0;
+    sa.sa_restorer = NULL;
+    sigaction(SIGINT, &sa, NULL);
+
     /* -- INIT GLOBAL VARS -- */
 
-    initPlayersArray();
+    if(initPlayersArray() == NULL) EXIT_ERRNO
     w_threads = (pthread_t *) malloc(sizeof(*w_threads) * WAITING_THREADS);
-    semid = semget(IPC_PRIVATE, 1, IPC_CREAT | 0600);
+    if(w_threads == NULL) EXIT_ERRNO
+    if( (semid = semget(IPC_PRIVATE, 1, IPC_CREAT | 0600)) == -1) EXIT_ERRNO
 
     /* -- CONFIG SERVER ADDRESS -- */
 
@@ -45,6 +68,11 @@ int main() {
     addr_server.sin_addr.s_addr = ADDRESS;  // 0.0.0.0
 
     waitConnections();                      // Create lobby
+
+    if(n_players <= 0) {
+        PRINT("[SERVER]: nessun giocatore in lobby\n")
+        goto main_exit;
+    }
 
     /* -- WAITING FOR ALL MAPS -- */
 
@@ -59,14 +87,16 @@ int main() {
 
     PRINT("[SERVER] All map configured\n")
 
+    if(semctl(semid, 0, IPC_RMID) == -1) EXIT_ERRNO
+
     /* -- GAME -- */
 
     gameInitialization();               //INITIALIZATION
 
     PRINT("[SERVER] Game initialization done\n")
 
-    size_t index = 0;
-    cmd_t cmd;
+    size_t index = 0;                   // Indice del giocatore di turno
+    cmd_t cmd;                          // Comando ricevuto
 
     PRINT("[SERVER] Starting game\n")
 
@@ -89,7 +119,7 @@ main_cmd_loop:
             goto main_cmd_loop;
 
         case CMD_MOVE:
-            get_move(players[index]);
+            get_move(players[index]);   // FIXME: se viene eliminato un giocatore l'indice potrebbe saltare il turno di un giocatore
             break;
 
         case CMD_ERROR:
@@ -106,6 +136,11 @@ main_cmd_loop:
     index = (index+1)%n_players;
     goto main_loop;
 
+main_exit:
+
+    PRINT("[SERVER]: application exit\n")
+    DEBUG("[DEBUG]: closing sem %d\n", semid);
+    if(semid != -1 && semctl(semid, 0, IPC_RMID) == -1) EXIT_ERRNO
     return EXIT_SUCCESS;
 
 }

@@ -8,4 +8,4 @@
 #include "helpers.h"
 #include "map.h"
 
-void *clientHandler(void *);
+void *clientHandler(void * _ptr);

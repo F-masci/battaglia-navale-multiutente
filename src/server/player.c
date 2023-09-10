@@ -2,41 +2,96 @@
 
 extern player_t **players;                              // Array di giocatori
 static size_t players_len = DEFAULT_PLAYERS_LEN;        // Lunghezza dell'array dei giocatori
-extern uint8_t n_players;                                // Numero di giocatori in lobby
+extern uint8_t n_players;                               // Numero di giocatori in lobby
 
-player_t *createPlayer(int socket) {
-
+/**
+ * @brief Crea un nuovo giocatore
+ * 
+ * @param[in] _fd_socket Descrittore del socket 
+ * @return Puntatore alla struttura del giocatore
+ * @retval ```NULL``` in caso di errore - viene impostato errno
+ */
+player_t *createPlayer(const int _fd_socket) {
+    errno = 0;
     player_t *player = (player_t *) malloc(sizeof(*player));
-    BZERO(player, sizeof(*player));
-    player->socket = socket;
-    player->ready = false;
-    initPlayerMap(player);
-
+    if(player != NULL) {
+        BZERO(player, sizeof(*player));
+        player->socket = _fd_socket;
+        player->ready = false;
+        if(!initPlayerMap(player)) return NULL;
+    }
     return player;
 }
 
-void *initPlayersArray(void) {
+/**
+ * @brief Inizializza l'array dei giocatori
+ * 
+ * @return L'indirizzo di memoria allocata
+ * @retval ```NULL``` in caso di errore - viene impostato errno
+ */
+player_t **initPlayersArray(void) {
     errno = 0;
     players = (player_t **) malloc(sizeof(*players) * players_len);
-    return (void *) players;
+    if(players != NULL) BZERO(players, sizeof(*players) * players_len);
+    return players;
 }
 
-bool addPlayer(player_t *player) {
+/**
+ * @brief Aggiugne un giocatore all'array dei giocatori
+ * 
+ * @param[in] _player Giocatore da inserire
+ * @return Ritorna se l'azione è stata eseguita correttamente o meno
+ * 
+ * @retval ```true``` Giocatore inserito correttamente
+ * @retval ```false``` Il giocatore non è stato inserito - viene impostato errno
+ * 
+ * @note In caso di fallimento l'array di giocatori non viene modificato e il giocatore non viene aggiunto
+ */
+bool addPlayer(player_t * const _player) {
     errno = 0;
     if(n_players == players_len) {    // Devo aumentare la dimensione dell'array - raddoppio ogni volta la dimensione
+        player_t **aux = players;
         players_len *= 2;
-        players = realloc(players, players_len * sizeof(*players));
-        if(players == NULL) return false;
+        players = reallocarray(players, players_len, sizeof(*players));
+        if(players == NULL) {
+            players = aux;
+            return false;
+        }
     }
-    player->index = n_players;
-    players[n_players++] = player;
+    _player->index = n_players;
+    players[n_players++] = _player;
     return true;
 }
 
-bool removePlayer(size_t index) {
+/**
+ * @brief Rimuove un giocatore all'array dei giocatori
+ * 
+ * @note La struttura dati del giocatore viene deallocata e il socket chiuso
+ * 
+ * @param[in] _index Giocatore da inserire
+ * @return Ritorna se l'azione è stata eseguita correttamente o meno
+ * 
+ * @retval ```true``` Giocatore rimosso correttamente
+ * @retval ```false``` Il giocatore non è stato rimosso - viene impostato errno
+ */
+bool removePlayer(const size_t _index) {
     errno = 0;
-    close(players[index]->socket);
-    for(uint8_t i = index; i<n_players-1; i++) {
+
+    player_t *player = players[_index];
+    while(close(player->socket) == -1) {
+        if(errno != EINTR) return false;
+        else errno = 0;
+    };
+
+    for(uint8_t i=0; i<MAP_SIZE; i++) {
+        free(player->map->grid[i]);
+    }
+    free(player->map->grid);
+    free(player->map->ships);
+    free(player->map);
+    free(player);
+
+    for(uint8_t i = _index; i<n_players-1; i++) {
         players[i] = players[i+1];
         players[i]->index = i;
     }
@@ -45,11 +100,20 @@ bool removePlayer(size_t index) {
     return true;
 }
 
-bool setNicknamePlayer(size_t index, char *nickname) {
-    errno = 0;
-    size_t len = strlen(nickname);
+/**
+ * @brief Imposta il nickname di un giocatore
+ * 
+ * @param[in] _index Giocatore
+ * @param[in] _nickname Nickname da impostare
+ * @return Ritorna se l'azione è stata eseguita correttamente o meno
+ * 
+ * @retval ```true``` Nickname impostato correttamente
+ * @retval ```false``` Il nickname non è stato impostato
+ */
+bool setNicknamePlayer(const size_t _index, const char * const _nickname) {
+    size_t len = strlen(_nickname);
     if(len > NICKNAME_LEN-1) return false;
-    BZERO(players[index]->nickname, NICKNAME_LEN);
-    memcpy(players[index]->nickname, nickname, len);
+    BZERO(players[_index]->nickname, NICKNAME_LEN);
+    memcpy(players[_index]->nickname, _nickname, len);
     return true;
 }

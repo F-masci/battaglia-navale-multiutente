@@ -6,6 +6,5 @@
 #include "../shared/config.h"
 #include "player.h"
 
-void initPlayerMap(player_t *);
-void printMap(cell_t **map);
-void makeMap(player_t *);
+bool initPlayerMap(player_t * const _player);
+void makeMap(player_t * const _player);
