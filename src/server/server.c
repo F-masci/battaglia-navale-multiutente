@@ -43,7 +43,7 @@ int main() {
     sigset_t set;
     sigfillset(&set);
     sigdelset(&set, SIGINT);
-    sigprocmask(SIG_SETMASK, &set, NULL);
+    if(sigprocmask(SIG_SETMASK, &set, NULL) == -1) EXIT_ERRNO
     
     struct sigaction sa;
     BZERO(&sa, sizeof(sa));
@@ -51,7 +51,7 @@ int main() {
     sa.sa_mask = set;
     sa.sa_flags = 0;
     sa.sa_restorer = NULL;
-    sigaction(SIGINT, &sa, NULL);
+    if(sigaction(SIGINT, &sa, NULL) == -1) EXIT_ERRNO
 
     /* -- INIT GLOBAL VARS -- */
 
@@ -76,14 +76,17 @@ int main() {
 
     /* -- WAITING FOR ALL MAPS -- */
 
-    semctl(semid, (int) 0, SETVAL, 0);
+    if(semctl(semid, (int) 0, SETVAL, 0) == -1) EXIT_ERRNO;
 
     struct sembuf so;
     BZERO(&so, sizeof(so));
     so.sem_num = 0;
     so.sem_op = (short) -n_players;
     so.sem_flg = 0;
-    semop(semid, &so, 1);
+    while(semop(semid, &so, 1) == -1) {
+        EXIT_ERRNO
+        errno = 0;
+    };
 
     PRINT("[SERVER] All map configured\n")
 
@@ -103,7 +106,10 @@ int main() {
 main_loop:
 
     // Start player turn
-    sendCmd(players[index], CMD_TURN);
+    if(!sendCmd(players[index], CMD_TURN)) {
+        CHECK_ERRNO("Error")
+        goto main_exit;
+    }
 
 main_cmd_loop:
     cmd = waitCmd(players[index]);
@@ -122,8 +128,11 @@ main_cmd_loop:
             get_move(players[index]);   // FIXME: se viene eliminato un giocatore l'indice potrebbe saltare il turno di un giocatore
             break;
 
+        case CMD_CLOSE_CONNECTION:
+            goto main_exit;
+
         case CMD_ERROR:
-            return EXIT_FAILURE;
+            goto main_exit;
 
         default: goto main_cmd_loop;
     }
@@ -137,7 +146,9 @@ main_cmd_loop:
     goto main_loop;
 
 main_exit:
-
+    for(uint8_t i=0; i<n_players; i++) {
+        if(!sendCmd(players[i], CMD_CLOSE_CONNECTION)) EXIT_ERRNO;
+    }
     PRINT("[SERVER]: application exit\n")
     DEBUG("[DEBUG]: closing sem %d\n", semid);
     if(semid != -1 && semctl(semid, 0, IPC_RMID) == -1) EXIT_ERRNO
