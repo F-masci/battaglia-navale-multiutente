@@ -142,9 +142,12 @@ int main() {
 
     PRINT("[SERVER] Starting game\n")
 
+    int16_t index_elim;                 // Indice del giocatore eliminato
+
 main_loop:
 
     // Start player turn
+    PRINT("[SERVER]: turn of %s\n", players[index]->nickname)
     if(!sendCmd(players[index], CMD_TURN)) {
         CHECK_ERRNO("Error")
         goto main_exit;
@@ -152,25 +155,42 @@ main_loop:
 
 main_cmd_loop:
     cmd = waitCmd(players[index]);
+    if(cmd == CMD_ERROR) EXIT_ERRNO
     PRINT("[%s]: request command %hu\n", players[index]->nickname, cmd)
     switch(cmd) {
 
         case CMD_GET_MAPS: 
-            sendMaps(players[index]);
+            if(!sendMaps(players[index])) EXIT_ERRNO
             goto main_cmd_loop;
 
         case CMD_GET_MAP:
-            sendMap(players[index]);
+            if(!sendMap(players[index])) EXIT_ERRNO
             goto main_cmd_loop;
 
         case CMD_MOVE:
-            getMove(players[index]);   // FIXME: se viene eliminato un giocatore l'indice potrebbe saltare il turno di un giocatore
+            index_elim = getMove(players[index]);
+            if(index_elim <= -1) EXIT_ERRNO
+            if(index == (uint8_t) index_elim) {                 // Nessuna eliminazione
+                for(uint8_t j=0; j<n_players; j++) if(!writeNum(players[j], n_players + 2)) EXIT_ERRNO
+            } else {                                            // Eliminazione di index_elim
+                for(uint8_t j=0; j<n_players; j++){
+                    if(j != (uint8_t) index_elim) {
+                        if(!writeNum(players[j], index_elim)) EXIT_ERRNO
+                    }
+                }
+                if(!writeNum(players[index_elim], n_players + 1)) EXIT_ERRNO
+
+                // Sistemo l'indice per il prossimo giocatore
+                // Se il prossimo giocatore è il primo togliendo un giocatore egli salterà il turno
+                // Dobbiamo impedire questa cosa
+                if(index+1 == n_players) index--;
+
+                if(!removePlayer(index_elim)) EXIT_ERRNO
+
+            }
             break;
 
         case CMD_CLOSE_CONNECTION:
-            goto main_exit;
-
-        case CMD_ERROR:
             goto main_exit;
 
         default: goto main_cmd_loop;

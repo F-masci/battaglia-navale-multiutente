@@ -4,10 +4,10 @@
 #include "../shared/lib.h"
 
 #include "helpers.h"
+#include "type.h"
 
-void print_maps(void);
-uint8_t choose_player(int option);
 void gameInitialization(void);
-void print_map(void);
-void make_move(void);
-void map_print(int option, char *encoded);
+void printMaps(void);
+void printMap(const char * encoded, bool show_all);
+void makeMove(void);
+uint8_t choosePlayer(const bool _insert_me);

@@ -4,4 +4,4 @@
 #include "../shared/cmd.h"
 
 cmd_t waitCmd(void);
-bool sendCmd(cmd_t);
+bool sendCmd(const cmd_t _cmd);

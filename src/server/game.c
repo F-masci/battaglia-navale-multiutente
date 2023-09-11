@@ -34,8 +34,16 @@ void gameInitialization(void){
     
 }
 
-#define BUFF_LEN 1024
-void getMove(player_t *player) {
+/**
+ * @brief Calcola la mossa di un giocatore
+ * 
+ * @param _player Giocatore che sta eseguendo la mossa
+ * @return Giocatore eliminato
+ * 
+ * @retval Un numero positivo diverso dall'indice di ```_player``` indica l'indice del giocatore eliminato
+ * @retval ```-1``` in caso di errore - viene impostato errno
+ */
+int16_t getMove(const player_t * const _player) {
 
     uint8_t index, x1, y1;
     int i;
@@ -43,7 +51,7 @@ void getMove(player_t *player) {
     char *message = NULL;
     char *encoded_move = NULL;
 
-    if(!waitString(player, &encoded_move)) EXIT_ERRNO;
+    if(!waitString(_player, &encoded_move)) return -1;
 
     index = encoded_move[0] - '0';
     x1 = encoded_move[1] - '0';
@@ -52,24 +60,24 @@ void getMove(player_t *player) {
 
     if(players[index]->map->grid[y1][x1] == '1'){
         players[index]->map->grid[y1][x1] = '2';
-        message = _make_message("%s ha colpito %s [%c %hhu]\n", player->nickname, players[index]->nickname, 'A' + x1, y1);
-        if(message == NULL) exit(EXIT_FAILURE);
+        message = _make_message("%s ha colpito %s [%c %hhu]\n", _player->nickname, players[index]->nickname, 'A' + x1, y1);
+        if(message == NULL) return -1;
     }
     else if(players[index]->map->grid[y1][x1] == '0' || players[index]->map->grid[y1][x1] == '3'){
         players[index]->map->grid[y1][x1] = '3';
-        message = _make_message("%s ha mancato %s [%c %hhu]\n", player->nickname, players[index]->nickname,'A' + x1, y1);
-        if(message == NULL) exit(EXIT_FAILURE);
+        message = _make_message("%s ha mancato %s [%c %hhu]\n", _player->nickname, players[index]->nickname,'A' + x1, y1);
+        if(message == NULL) return -1;
     }
     else if(players[index]->map->grid[y1][x1] == '2'){
-        message = _make_message("%s ha colpito una parte di una nave di %s già colpita [%c %hhu]\n", player->nickname, players[index]->nickname, 'A' + x1, y1);
-        if(message == NULL) exit(EXIT_FAILURE);
+        message = _make_message("%s ha colpito una parte di una nave di %s già colpita [%c %hhu]\n", _player->nickname, players[index]->nickname, 'A' + x1, y1);
+        if(message == NULL) return -1;
     }
 
-    PRINT("[%s]: %s", player->nickname, message)
+    PRINT("[%s]: %s", _player->nickname, message)
 
     for(uint8_t h=0; h<n_players; h++){
-        if(!sendCmd(players[h], CMD_STATUS)) EXIT_ERRNO
-        if(!writeString(players[h], message)) EXIT_ERRNO
+        if(!sendCmd(players[h], CMD_STATUS)) return -1;
+        if(!writeString(players[h], message)) return -1;
     }
 
     free(message);
@@ -119,20 +127,20 @@ void getMove(player_t *player) {
 
         switch(dim) {
             case 2:
-                message = _make_message("%s ha affondato DESTROYER di %s\n", player->nickname, players[index]->nickname);
-                if(message == NULL) exit(EXIT_FAILURE);
+                message = _make_message("%s ha affondato DESTROYER di %s\n", _player->nickname, players[index]->nickname);
+                if(message == NULL) return -1;
                 break;
             case 3:
-                message = _make_message("%s ha affondato SUBMARINE di %s\n", player->nickname, players[index]->nickname);
-                if(message == NULL) exit(EXIT_FAILURE);
+                message = _make_message("%s ha affondato SUBMARINE di %s\n", _player->nickname, players[index]->nickname);
+                if(message == NULL) return -1;
                 break;
             case 4:
-                message = _make_message("%s ha affondato BATTLESHIP di %s\n", player->nickname, players[index]->nickname);
-                if(message == NULL) exit(EXIT_FAILURE);
+                message = _make_message("%s ha affondato BATTLESHIP di %s\n", _player->nickname, players[index]->nickname);
+                if(message == NULL) return -1;
                 break;
             case 5:
-                message = _make_message("%s ha affondato CARRIER di %s\n", player->nickname, players[index]->nickname);
-                if(message == NULL) exit(EXIT_FAILURE);
+                message = _make_message("%s ha affondato CARRIER di %s\n", _player->nickname, players[index]->nickname);
+                if(message == NULL) return -1;
                 break;
             default: break;
         }
@@ -143,16 +151,16 @@ next:
         ;
     }
 
-    message = _make_message("%s non ha affondato nessuna nave di %s\n", player->nickname, players[index]->nickname);
-    if(message == NULL) exit(EXIT_FAILURE);
+    message = _make_message("%s non ha affondato nessuna nave di %s\n", _player->nickname, players[index]->nickname);
+    if(message == NULL) return -1;
 
 send:
 
-    PRINT("[%s]: %s", player->nickname, message)
-    if(message == NULL) exit(EXIT_FAILURE);
+    PRINT("[%s]: %s", _player->nickname, message)
+    if(message == NULL) return -1;
 
     for(uint8_t h=0; h<n_players; h++){
-        if(!writeString(players[h], message)) EXIT_ERRNO
+        if(!writeString(players[h], message)) return -1;
     }
 
     free(message);
@@ -167,18 +175,9 @@ send:
         }
     }
 
-    for(uint8_t j=0; j<n_players; j++){
-        if(elim) {
-            if(j == index) {
-                writeNum(players[index], n_players + 1);
-                removePlayer(index);
-            } else {
-                writeNum(players[j], index);
-            }
-        } else {
-            writeNum(players[j], n_players + 2);
-        }
-    }
+    if(elim) return (int16_t) index;
+
+    return (int16_t) _player->index;
 }
 
 /**
@@ -190,10 +189,10 @@ send:
  * @retval ```true``` Mappe inviate correttamente
  * @retval ```false``` La mappe non sono state inviate - viene impostato errno
  */
-bool sendMaps(const player_t * const player) {
+bool sendMaps(const player_t * const _player) {
     
     errno = 0;
-    uint8_t index = player->index;
+    uint8_t index = _player->index;
 
     // N_PLAYERS * MAP_SIZE * MAP_SIZE => mappa di ogni giocatore
     // +
@@ -224,7 +223,7 @@ bool sendMaps(const player_t * const player) {
 
     DEBUG("[DEBUG]: sending %s (%ld chars)\n", encoded, strlen(encoded))
 
-    if(!writeString(player, encoded)) {
+    if(!writeString(_player, encoded)) {
         free(encoded);
         return false;
     }
@@ -243,7 +242,7 @@ bool sendMaps(const player_t * const player) {
  * @retval ```true``` Mappa inviata correttamente
  * @retval ```false``` La mappa non è stata inviata - viene impostato errno
  */
-bool sendMap(const player_t * const player) {
+bool sendMap(const player_t * const _player) {
 
     errno = 0;
 
@@ -258,12 +257,12 @@ bool sendMap(const player_t * const player) {
     DEBUG("[DEBUG]: allocated %ld bytes\n", len * sizeof(*encoded))
     
     uint8_t i;
-    if(!waitNum(player, (uint32_t *) &i)) {
+    if(!waitNum(_player, (uint32_t *) &i)) {
         free(encoded);
         return false;
     }
 
-    DEBUG("[DEBUG]: sending map of %s to %s\n", players[i]->nickname, player->nickname)
+    DEBUG("[DEBUG]: sending map of %s to %s\n", players[i]->nickname, _player->nickname)
 
     for(int j=0; j<MAP_SIZE; j++){
         for(int k=0; k<MAP_SIZE; k++){
@@ -274,7 +273,7 @@ bool sendMap(const player_t * const player) {
 
     DEBUG("[DEBUG]: sending %s (%ld chars)\n", encoded, strlen(encoded))
 
-    if(!writeString(player, encoded)) {
+    if(!writeString(_player, encoded)) {
         free(encoded);
         return false;
     };

@@ -24,8 +24,6 @@
 #include <ctype.h>
 #include <math.h>
 
-#define PRINT(...)  { printf(__VA_ARGS__); fflush(stdout); }
-
 #ifdef PROD
 #define DEBUG(...) ;
 #else
@@ -40,3 +38,5 @@
 
 #define EXIT_ERRNO { if(errno != 0 && errno != EINTR) { perror("Error"); raise(SIGINT); } else { errno = 0; } }
 #define CHECK_ERRNO(err) if(errno != 0) { perror("Error"); errno = 0; } else { fprintf(stderr, err); }
+
+#define PRINT(...)  { while(printf(__VA_ARGS__) <= 0) EXIT_ERRNO; fflush(stdout); }

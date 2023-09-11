@@ -34,7 +34,7 @@ handler_loop:
         PRINT("[%s]: waiting command\n", player->nickname)
         cmd = waitCmd(player);
         PRINT("[%s]: request command %hhu\n", player->nickname, cmd)
-        if(cmd == CMD_ERROR) goto handler_exit;
+        if(cmd == CMD_ERROR) raise(SIGINT);
         switch(cmd) {
 
             case CMD_SET_NICKNAME: 
@@ -119,7 +119,9 @@ handler_loop:
                 pthread_exit(NULL);
                 break;
             
-            default: goto handler_exit;
+            case CMD_CLOSE_CONNECTION: goto handler_exit;
+
+            default: raise(SIGINT);
         }
     goto handler_loop;
 
@@ -128,6 +130,22 @@ handler_exit:
     if(!sendCmd(player, CMD_CLOSE_CONNECTION)) EXIT_ERRNO
     if(!removePlayer(player->index)) EXIT_ERRNO
     if(buffer != NULL) free(buffer);
+
+    for(uint8_t i=0; i<n_players; i++) {
+        if(players[i]->ready == false) goto handler_loop;
+    }
+
+    PRINT("[SERVER]: all players ready\n")
+    for(size_t i=0; i<WAITING_THREADS; i++) {
+        if(pthread_kill(w_threads[i], SIGUSR1) != 0) EXIT_ERRNO
+    }
+    free(w_threads);
+    w_threads = NULL;
+    if(kill(getpid(), SIGUSR2) == -1) EXIT_ERRNO
+
+    for(size_t i=0; i<n_players; i++) {
+        if(!sendCmd(players[i], CMD_START_GAME)) EXIT_ERRNO
+                }
 
     return NULL;
 

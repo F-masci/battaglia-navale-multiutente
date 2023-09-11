@@ -24,32 +24,38 @@
 
 struct sockaddr_in addr_server;
 int socket_client = -1;
-cell_t **map;
 uint8_t num;
 char **nicknames;
+uint8_t me = -1;
 
 static void exit_function(int code) {
     if(socket_client != -1) {
-        if(!sendCmd(CMD_CLOSE_CONNECTION)) exit(EXIT_FAILURE);
+        if(!sendCmd(CMD_ERROR)) {
+            if(errno == EPIPE) {
+                exit(EXIT_FAILURE);
+            } else {
+                perror("Error");
+                exit(EXIT_FAILURE);
+            }
+        }
         if(close(socket_client) == -1) exit(EXIT_FAILURE);
     }
     exit(code);
 }
 
 static void _sigint_main_handler(int sig, siginfo_t *dummy, void *dummy2) {
-    PRINT("[SERVER]: server exit for SIGINT\n")
+    PRINT("Client exit for SIGINT\n")
     exit_function(EXIT_SUCCESS);
 }
 
 static void _sigpipe_main_handler(int sig, siginfo_t *dummy, void *dummy2) {
-    PRINT("[SERVER]: server exit for SIGPIPE\n")
+    PRINT("Client exit for SIGPIPE\n")
     exit_function(EXIT_FAILURE);
 }
 
-#define BUFF_LEN 1024
 int main(void) {
 
-    int i;
+    errno = 0;
 
     /* -- SIGINT HANDLER -- */
 
@@ -105,10 +111,10 @@ int main(void) {
     timeout.tv_usec = 0;
 
     udp_socket_client = socket(AF_INET, SOCK_DGRAM, 0);
-    setsockopt(udp_socket_client, SOL_SOCKET, SO_REUSEADDR, &(int) {1}, sizeof(int));
-    setsockopt(udp_socket_client, SOL_SOCKET, SO_BROADCAST, &(int) {1}, sizeof(int));
-    setsockopt (udp_socket_client, SOL_SOCKET, SO_RCVTIMEO, &timeout, sizeof(timeout));
-    bind(udp_socket_client, (struct sockaddr *) &udp_addr_client, sizeof(udp_addr_client));
+    if(setsockopt(udp_socket_client, SOL_SOCKET, SO_REUSEADDR, &(int) {1}, sizeof(int)) == -1) EXIT_ERRNO
+    if(setsockopt(udp_socket_client, SOL_SOCKET, SO_BROADCAST, &(int) {1}, sizeof(int)) == -1) EXIT_ERRNO
+    if(setsockopt (udp_socket_client, SOL_SOCKET, SO_RCVTIMEO, &timeout, sizeof(timeout)) == -1) EXIT_ERRNO
+    if(bind(udp_socket_client, (struct sockaddr *) &udp_addr_client, sizeof(udp_addr_client)) == -1) EXIT_ERRNO
 
     socklen_t udp_server_addr_len = sizeof(udp_server_addr);
 
@@ -121,9 +127,11 @@ int main(void) {
 config_connection_loop:
     PRINT("\nComando: ")
     if(scanf("%hhu", &config) <= 0) {
+        EXIT_ERRNO
         while((getchar()) != '\n');
         goto config_connection_loop;
     }
+    while((getchar()) != '\n');
 
     switch(config) {
         case 1:
@@ -133,24 +141,41 @@ config_connection_loop:
             PRINT("Seleziona rete:\n\n")
 
             struct ifaddrs *nics;
-            getifaddrs(&nics);
+            while(getifaddrs(&nics) == -1) EXIT_ERRNO
             char *ip = (char*) malloc(sizeof(*ip) * 16);
+            if(ip == NULL ) EXIT_ERRNO
             char *brd = (char*) malloc(sizeof(*brd) * 16);
+            if(brd == NULL) EXIT_ERRNO
             struct ifaddrs *nic = nics;
 
             struct sockaddr_in **broadcast = (struct sockaddr_in **) malloc(sizeof(*broadcast) * 1);
+            if(broadcast == NULL) EXIT_ERRNO
             size_t broadcast_len = 1, broadcast_counter = 0;
 
             int counter = 1;
+            int ret;
             while(nic) {
                 if (nic->ifa_addr->sa_family == AF_INET) {  // Interfaccia IPV4
-                    getnameinfo(nic->ifa_addr, sizeof(struct sockaddr_in), ip, sizeof(*ip) * 16, 0, 0, NI_NUMERICHOST);
-                    getnameinfo(nic->ifa_broadaddr, sizeof(struct sockaddr_in), brd, sizeof(*brd) * 16, 0, 0, NI_NUMERICHOST);
-                    printf("\t[%d] %s -> %s\n", counter++, ip, brd);
+                    while( (ret = getnameinfo(nic->ifa_addr, sizeof(struct sockaddr_in), ip, sizeof(*ip) * 16, 0, 0, NI_NUMERICHOST)) != 0 ) {
+                        if(ret == EAI_SYSTEM) {
+                            EXIT_ERRNO
+                        } else {
+                            while(fprintf(stderr, "Error: can't retrive network interface's informations\n") == -1) EXIT_ERRNO
+                        }
+                    }
+                    while( (ret = getnameinfo(nic->ifa_broadaddr, sizeof(struct sockaddr_in), brd, sizeof(*brd) * 16, 0, 0, NI_NUMERICHOST)) != 0 ) {
+                        if(ret == EAI_SYSTEM) {
+                            EXIT_ERRNO
+                        } else {
+                            while(fprintf(stderr, "Error: can't retrive network interface's informations\n") == -1) EXIT_ERRNO
+                        }
+                    }
+                    PRINT("\t[%d] %s -> %s\n", counter++, ip, brd);
 
                     if(broadcast_counter == broadcast_len) {
                         broadcast_len *= 2;
                         broadcast = reallocarray(broadcast, broadcast_len, sizeof(*broadcast));
+                        if(broadcast == NULL) EXIT_ERRNO
                     }
 
                     broadcast[broadcast_counter++] = (struct sockaddr_in *) nic->ifa_broadaddr;
@@ -163,9 +188,11 @@ config_connection_loop:
 network_loop:
             PRINT("\nRete: ")
             if(scanf("%hhu", &net) <= 0) {
+                EXIT_ERRNO
                 while((getchar()) != '\n');
                 goto network_loop;
             }
+            while((getchar()) != '\n');
 
             net--;
             if(net >= broadcast_counter) goto network_loop;
@@ -173,39 +200,56 @@ network_loop:
             udp_server_addr.sin_addr = broadcast[net]->sin_addr;                          // 255.255.255.255
 
             freeifaddrs(nics);
+            nics = NULL;
             free(ip);
+            ip = NULL;
             free(brd);
+            brd = NULL;
             free(broadcast);
+            broadcast = NULL;
             break;
 
         case 2: 
             
-            ;
-            char *addr;
             PRINT("IP: ")
-            scanf("%ms", &addr);
-            if(inet_aton(addr, &udp_server_addr.sin_addr) == 0) goto config_connection_loop;
+
+            char *addr = NULL;
+
+            while(scanf("%ms", &addr) <= 0) {
+                EXIT_ERRNO
+                while((getchar()) != '\n');
+            }
+            while((getchar()) != '\n');
+            if( !inet_aton(addr, &udp_server_addr.sin_addr) ) goto config_connection_loop;
+
             free(addr);
+            addr = NULL;
             break;
 
         case 3:
 
-            ;
+            PRINT("URL: ")
+
             char *url;
             struct hostent *hp;
-            PRINT("URL: ")
-            scanf("%ms", &url);
+            
+            while(scanf("%ms", &url) <= 0) {
+                EXIT_ERRNO
+                while((getchar()) != '\n');
+            }
+            while((getchar()) != '\n');
             hp = gethostbyname(url);
             if(hp == NULL) goto config_connection_loop;
-            bcopy(hp->h_addr, &udp_server_addr.sin_addr, hp->h_length);
+            memcpy(&udp_server_addr.sin_addr, hp->h_addr, hp->h_length);
             free(url);
             break;
 
         default: goto config_connection_loop;
     }
     
-    sendto(udp_socket_client, NULL, 0, 0, (struct sockaddr *) &udp_server_addr, sizeof(udp_server_addr));
+    while(sendto(udp_socket_client, NULL, 0, 0, (struct sockaddr *) &udp_server_addr, sizeof(udp_server_addr)) == -1) EXIT_ERRNO
     if(recvfrom(udp_socket_client, NULL, 0, MSG_TRUNC, (struct sockaddr *) &udp_server_addr, &udp_server_addr_len) == -1){
+        if(errno != EAGAIN) EXIT_ERRNO
         PRINT("Nessun server trovato\n")
         goto config_connection_loop;
     }
@@ -217,19 +261,14 @@ network_loop:
         goto config_connection_loop;
     }
 
-    close(udp_socket_client);
+    while(close(udp_socket_client) == -1) EXIT_ERRNO
     addr_server.sin_addr.s_addr = udp_server_addr.sin_addr.s_addr;
 
     clientConnection();                     // CLIENT CONNECTION
-
-    map = (cell_t **) malloc(MAP_SIZE * sizeof(*map));
-    for(i=0; i<MAP_SIZE; i++) map[i] = (cell_t *) malloc(MAP_SIZE * sizeof(*(map[i])));
-
-    mapInitialization();                   // MAP INITIALIZATION
-    gameInitialization();                  // INITIALIZATION OF DATA NEEDED FOR THE GAME
+    mapInitialization();                    // MAP INITIALIZATION
+    gameInitialization();                   // INITIALIZATION OF DATA NEEDED FOR THE GAME
 
     cmd_t cmd;
-    char *buffer = (char *)malloc(sizeof(char) * BUFF_LEN);
     char *message = NULL;
     uint16_t alive;
 
@@ -240,19 +279,20 @@ wait_turn:
     cmd = waitCmd();
 
     switch(cmd) {
+
         case CMD_STATUS:
 
-            waitString(&message);
-            printf("%s\n", message);
+            if(!waitString(&message)) EXIT_ERRNO
+            PRINT("%s\n", message)
             free(message);
             message = NULL;
 
-            waitString(&message);
-            printf("%s\n", message);
+            if(!waitString(&message)) EXIT_ERRNO
+            PRINT("%s\n", message);
             free(message);
             message = NULL;
 
-            waitNum((uint32_t *) &alive);
+            if(!waitNum((uint32_t *) &alive)) EXIT_ERRNO
             if((uint8_t) (alive-2) == num) {
                 goto wait_turn;
             } else if((uint8_t) (alive-1) == num) {
@@ -280,7 +320,7 @@ wait_turn:
             clrscr();
             PRINT("È il tuo turno\n")
 
-            main_loop:
+main_loop:
 
             //clrscr();
 
@@ -291,34 +331,46 @@ wait_turn:
 
             PRINT("Comando: ")
             if(scanf("%hhu", &cmd) <= 0) {
+                EXIT_ERRNO
                 while((getchar()) != '\n');
                 goto main_loop;
             }
+            while((getchar()) != '\n');
 
-            BZERO(buffer, BUFF_LEN);
             switch(cmd) {
                 case 1: 
-                    sendCmd(CMD_GET_MAPS);
-                    print_maps();
+                    if(!sendCmd(CMD_GET_MAPS)) EXIT_ERRNO
+                    printMaps();
                     goto main_loop;
 
                 case 2:
-                    sendCmd(CMD_GET_MAP);
-                    print_map();
+                    if(!sendCmd(CMD_GET_MAP)) EXIT_ERRNO
+
+                    char *encoded = NULL;
+                    uint8_t p = choosePlayer(true);
+                    if(!writeNum((uint32_t) p)) EXIT_ERRNO
+                    if(!waitString(&encoded)) EXIT_ERRNO
+
+                    if(p == me) printMap(encoded, true);
+                    else printMap(encoded, false);
+
+                    free(encoded);
+                    encoded = NULL;
+
                     goto main_loop;
 
                 case 3: 
-                    sendCmd(CMD_MOVE);
-                    make_move();
+                    if(!sendCmd(CMD_MOVE)) EXIT_ERRNO
+                    makeMove();
                     goto wait_turn;
 
                 default: goto main_loop;
             }
             goto wait_turn;
         
-        case CMD_CLOSE_CONNECTION: return EXIT_FAILURE;
+        case CMD_CLOSE_CONNECTION: return EXIT_SUCCESS;
 
-        case CMD_ERROR: return EXIT_FAILURE;
+        case CMD_ERROR: EXIT_ERRNO;
 
         default: goto wait_turn;
     }
@@ -326,4 +378,3 @@ wait_turn:
     return EXIT_SUCCESS;
 
 }
-#undef BUFF_LEN

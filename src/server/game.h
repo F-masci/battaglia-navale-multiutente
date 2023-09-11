@@ -9,4 +9,4 @@
 void gameInitialization(void);
 bool sendMaps(const player_t * const player);
 bool sendMap(const player_t * const player);
-void getMove(player_t *player);
+int16_t getMove(const player_t * const _player);
