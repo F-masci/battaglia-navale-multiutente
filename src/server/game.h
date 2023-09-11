@@ -6,7 +6,7 @@
 #include "cmd.h"
 #include "player.h"
 
-void send_maps(player_t *player);
 void gameInitialization(void);
-void send_map(player_t *player);
-void get_move(player_t *player);
+bool sendMaps(const player_t * const player);
+bool sendMap(const player_t * const player);
+void getMove(player_t *player);

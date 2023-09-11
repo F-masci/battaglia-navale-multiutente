@@ -28,6 +28,8 @@ static void _sigusr2_waiting_handler(int sig, siginfo_t *dummy, void *dummy2) {
 
 static void *_waiting_thread(void * args) {
 
+    errno = 0;
+
     size_t index = (size_t) args;
     size_t next = (index+1)%WAITING_THREADS;
 
@@ -39,13 +41,13 @@ static void *_waiting_thread(void * args) {
 
 waiting_thread_loop:
 
-    pthread_mutex_lock(&(mut[index]));
+    if(!pthread_mutex_lock(&(mut[index]))) EXIT_ERRNO
     PRINT("[THREAD %ld]: ready to accept\n", index)
-    while ((socket_client = accept(socket_server, (struct sockaddr *) &addr_client, &len_client)) == -1);
+    while ((socket_client = accept(socket_server, (struct sockaddr *) &addr_client, &len_client)) == -1) EXIT_ERRNO
     PRINT("[THREAD %ld]: accepted\n", index)
-    pthread_mutex_unlock(&(mut[next]));
+    if(!pthread_mutex_unlock(&(mut[next]))) EXIT_ERRNO;
 
-    pthread_create(&pid, NULL, clientHandler, (void *) &socket_client);
+    if(!pthread_create(&pid, NULL, clientHandler, (void *) &socket_client)) EXIT_ERRNO
 
     goto waiting_thread_loop;
 
@@ -66,54 +68,57 @@ void waitConnections(void)
     */
 
     sigset_t set;
-    sigfillset(&set);
-    sigdelset(&set, SIGUSR1);
-    sigdelset(&set, SIGINT);
-    sigprocmask(SIG_SETMASK, &set, NULL);
+    sigemptyset(&set);
+    sigaddset(&set, SIGUSR1);
+    if(sigprocmask(SIG_UNBLOCK, &set, NULL) == -1) EXIT_ERRNO
     
+    sigemptyset(&set);
+
     struct sigaction sa;
     BZERO(&sa, sizeof(sa));
     sa.sa_sigaction = _sigusr1_waiting_handler;
     sa.sa_mask = set;
     sa.sa_flags = 0;
     sa.sa_restorer = NULL;
-    sigaction(SIGUSR1, &sa, NULL);
+    if(sigaction(SIGUSR1, &sa, NULL) == -1) EXIT_ERRNO
 
-    sigemptyset(&set);
     BZERO(&sa, sizeof(sa));
     sa.sa_sigaction = _sigusr2_waiting_handler;
     sa.sa_mask = set;
     sa.sa_flags = 0;
     sa.sa_restorer = NULL;
-    sigaction(SIGUSR2, &sa, NULL);
+    if(sigaction(SIGUSR2, &sa, NULL) == -1) EXIT_ERRNO
 
     /* -- STARTING SERVER -- */
 
-    socket_server = socket(AF_INET, SOCK_STREAM, 0);
-    setsockopt(socket_server, SOL_SOCKET, SO_REUSEADDR, &(int) {1}, sizeof(int));
-    bind(socket_server, (struct sockaddr *) &addr_server, sizeof(addr_server));
-    listen(socket_server, PENDING);
+    if( (socket_server = socket(AF_INET, SOCK_STREAM, 0)) == -1) EXIT_ERRNO;
+    if(setsockopt(socket_server, SOL_SOCKET, SO_REUSEADDR, &(int) {1}, sizeof(int)) == -1) EXIT_ERRNO;
+    if(bind(socket_server, (struct sockaddr *) &addr_server, sizeof(addr_server)) == -1) EXIT_ERRNO
+    if(listen(socket_server, PENDING) == -1) EXIT_ERRNO;
 
     /* -- START WAITING THREADS -- */
 
     for(size_t i=0; i<WAITING_THREADS; i++) {
         
         pthread_mutex_init(&(mut[i]), NULL);
-        pthread_mutex_lock(&(mut[i]));
+        if(!pthread_mutex_lock(&(mut[i]))) EXIT_ERRNO
         
-        pthread_create(w_threads+i, NULL, _waiting_thread, (void *) i);
+        if(!pthread_create(w_threads+i, NULL, _waiting_thread, (void *) i)) EXIT_ERRNO
     }
 
     /* -- UNLOCK FIRST THREAD -- */
 
-    pthread_mutex_unlock(&(mut[0]));
+    if(!pthread_mutex_unlock(&(mut[0]))) EXIT_ERRNO
 
     /* -- SETTING SIGNAL MASK -- */
 
-    sigfillset(&set);
-    sigdelset(&set, SIGUSR2);
-    sigdelset(&set, SIGINT);
-    sigprocmask(SIG_SETMASK, &set, NULL);
+    sigemptyset(&set);
+    sigaddset(&set, SIGUSR2);
+    if(sigprocmask(SIG_UNBLOCK, &set, NULL) == -1) EXIT_ERRNO
+
+    sigemptyset(&set);
+    sigaddset(&set, SIGUSR1);
+    if(sigprocmask(SIG_BLOCK, &set, NULL) == -1) EXIT_ERRNO
     
     /* -- LOCAL CONNECTION -- */
     /**
@@ -129,23 +134,27 @@ void waitConnections(void)
     local_server_addr.sin_addr.s_addr = ADDRESS;          // 0.0.0.0
 
     int local_server_socket = socket(AF_INET, SOCK_DGRAM, 0);
-    setsockopt(local_server_socket, SOL_SOCKET, SO_REUSEADDR, &(int) {1}, sizeof(int));
-    bind(local_server_socket, (struct sockaddr *) &local_server_addr, sizeof(local_server_addr));
+    if(local_server_socket == -1) EXIT_ERRNO
+    if(setsockopt(local_server_socket, SOL_SOCKET, SO_REUSEADDR, &(int) {1}, sizeof(int)) == -1) EXIT_ERRNO
+    if(bind(local_server_socket, (struct sockaddr *) &local_server_addr, sizeof(local_server_addr)) == -1) EXIT_ERRNO
     
     struct sockaddr_in client_addr;
-    socklen_t socket_len;
+    socklen_t client_addr_len = sizeof(client_addr);
     BZERO((char *) &client_addr, sizeof(client_addr));
 
 local_connection_loop:
 
     if(stop_server) {
-        close(local_server_socket);
+        while(close(local_server_socket) == -1) EXIT_ERRNO
         return;
     }
-    if(recvfrom(local_server_socket, NULL, 0, MSG_TRUNC, (struct sockaddr *) &client_addr, &socket_len) == -1) goto local_connection_loop;
+    if(recvfrom(local_server_socket, NULL, 0, MSG_TRUNC, (struct sockaddr *) &client_addr, &client_addr_len) == -1) {
+        EXIT_ERRNO
+        goto local_connection_loop;
+    }
     DEBUG("[DEBUG]: received request from %s (port %d)\n", inet_ntoa(client_addr.sin_addr), ntohs(client_addr.sin_port))
     client_addr.sin_port = htons(UDP_PORT_CLN);     // 6502
-    sendto(local_server_socket, NULL, 0, 0, (struct sockaddr *) &client_addr, sizeof(client_addr));
+    while(sendto(local_server_socket, NULL, 0, 0, (struct sockaddr *) &client_addr, sizeof(client_addr)) == -1) EXIT_ERRNO
 
     goto local_connection_loop;
 

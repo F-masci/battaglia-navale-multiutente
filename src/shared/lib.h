@@ -13,6 +13,7 @@
 #include <sys/ipc.h>
 #include <sys/sem.h>
 #include <arpa/inet.h>
+#include <stdarg.h>
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -26,12 +27,10 @@
 #define PRINT(...)  { printf(__VA_ARGS__); fflush(stdout); }
 
 #ifdef PROD
-#define PROD 0
+#define DEBUG(...) ;
 #else
-#define PROD 1
+#define DEBUG(...) { printf(__VA_ARGS__); fflush(stdout); }
 #endif
-
-#define DEBUG(...) { if(PROD) { printf(__VA_ARGS__); fflush(stdout); } }
 
 #define clrscr() PRINT("\033[1;1H\033[2J")
 
@@ -39,5 +38,5 @@
 
 #define BZERO(ptr, s) memset(ptr, 0, s)
 
-#define EXIT_ERRNO { if(errno != 0 && errno != EINTR) { perror("Error:"); exit(EXIT_FAILURE); } }
+#define EXIT_ERRNO { if(errno != 0 && errno != EINTR) { perror("Error"); raise(SIGINT); } else { errno = 0; } }
 #define CHECK_ERRNO(err) if(errno != 0) { perror("Error"); errno = 0; } else { fprintf(stderr, err); }

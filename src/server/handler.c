@@ -31,9 +31,10 @@ void *clientHandler(void *_ptr) {
     char *buffer = NULL;        // Buffer di appoggio per la lettura/ricezione di stringhe
 
 handler_loop:
+        PRINT("[%s]: waiting command\n", player->nickname)
         cmd = waitCmd(player);
-        if(cmd == CMD_ERROR) goto handler_exit;
         PRINT("[%s]: request command %hhu\n", player->nickname, cmd)
+        if(cmd == CMD_ERROR) goto handler_exit;
         switch(cmd) {
 
             case CMD_SET_NICKNAME: 
@@ -49,6 +50,7 @@ handler_loop:
                     goto handler_exit;
                 }
                 free(buffer);
+                buffer = NULL;
                 break;
 
             case CMD_LIST_PLAYERS: 
@@ -64,6 +66,7 @@ handler_loop:
                     goto handler_exit;
                 };
                 free(buffer);
+                buffer = NULL;
                 break;
 
             case CMD_START_GAME:
@@ -77,6 +80,7 @@ handler_loop:
                     if(pthread_kill(w_threads[i], SIGUSR1) != 0) EXIT_ERRNO
                 }
                 free(w_threads);
+                w_threads = NULL;
                 if(kill(getpid(), SIGUSR2) == -1) EXIT_ERRNO
 
                 for(size_t i=0; i<n_players; i++) {
@@ -108,9 +112,10 @@ handler_loop:
                 so.sem_num = 0;
                 so.sem_op = 1;
                 so.sem_flg = 0;
-                semop(semid, &so, 1);
+                while(semop(semid, &so, 1) == -1) EXIT_ERRNO
 
                 free(buffer);
+                buffer = NULL;
                 pthread_exit(NULL);
                 break;
             
@@ -120,8 +125,8 @@ handler_loop:
 
 handler_exit:
     PRINT("[%s]: disconnected\n", player->nickname)
-    if(!sendCmd(player, CMD_CLOSE_CONNECTION)) EXIT_ERRNO;
-    removePlayer(player->index);
+    if(!sendCmd(player, CMD_CLOSE_CONNECTION)) EXIT_ERRNO
+    if(!removePlayer(player->index)) EXIT_ERRNO
     if(buffer != NULL) free(buffer);
 
     return NULL;

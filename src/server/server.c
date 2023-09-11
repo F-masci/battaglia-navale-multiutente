@@ -29,11 +29,32 @@ player_t **players = NULL;                      // Array di puntatori ai metadat
 pthread_t *w_threads;                           // Waiting threads
 int semid = -1;                                 // Semaforo per sincronizzare la ricezione delle mappe
 
+static void exit_function(int code) {
+    if(semid != -1) {
+        DEBUG("[DEBUG]: closing sem %d\n", semid);
+        if(semctl(semid, 0, IPC_RMID) == -1) EXIT_ERRNO
+    }
+    
+    for(uint8_t i=0; i<n_players; i++) {
+        if(!sendCmd(players[i], CMD_CLOSE_CONNECTION)) {
+            if(errno != EPIPE) {
+                CHECK_ERRNO("Error");
+            } else {
+                errno = 0;
+            }
+        }
+    }
+    exit(code);
+}
+
 static void _sigint_main_handler(int sig, siginfo_t *dummy, void *dummy2) {
-    PRINT("[SERVER]: application exit for SIGINT\n")
-    DEBUG("[DEBUG]: closing sem %d\n", semid);
-    if(semid != -1 && semctl(semid, 0, IPC_RMID) == -1) EXIT_ERRNO
-    exit(EXIT_SUCCESS);
+    PRINT("[SERVER]: server exit for SIGINT\n")
+    exit_function(EXIT_SUCCESS);
+}
+
+static void _sigpipe_main_handler(int sig, siginfo_t *dummy, void *dummy2) {
+    PRINT("[SERVER]: server exit for SIGPIPE\n")
+    exit_function(EXIT_FAILURE);
 }
 
 int main() {
@@ -43,7 +64,7 @@ int main() {
     sigset_t set;
     sigfillset(&set);
     sigdelset(&set, SIGINT);
-    if(sigprocmask(SIG_SETMASK, &set, NULL) == -1) EXIT_ERRNO
+    if(sigprocmask(SIG_SETMASK, &set, NULL) == -1) exit(EXIT_FAILURE);
     
     struct sigaction sa;
     BZERO(&sa, sizeof(sa));
@@ -51,7 +72,22 @@ int main() {
     sa.sa_mask = set;
     sa.sa_flags = 0;
     sa.sa_restorer = NULL;
-    if(sigaction(SIGINT, &sa, NULL) == -1) EXIT_ERRNO
+    if(sigaction(SIGINT, &sa, NULL) == -1) exit(EXIT_FAILURE);
+
+    /* -- SIGPIPE HANDLER -- */
+
+    sigemptyset(&set);
+    sigaddset(&set, SIGPIPE);
+    if(sigprocmask(SIG_UNBLOCK, &set, NULL) == -1) exit(EXIT_FAILURE);
+
+    sigfillset(&set);
+
+    BZERO(&sa, sizeof(sa));
+    sa.sa_sigaction = _sigpipe_main_handler;
+    sa.sa_mask = set;
+    sa.sa_flags = 0;
+    sa.sa_restorer = NULL;
+    if(sigaction(SIGPIPE, &sa, NULL) == -1) exit(EXIT_FAILURE);
 
     /* -- INIT GLOBAL VARS -- */
 
@@ -92,6 +128,9 @@ int main() {
 
     if(semctl(semid, 0, IPC_RMID) == -1) EXIT_ERRNO
 
+    DEBUG("[DEBUG] Semaphore %d closed\n", semid)
+    semid = -1;
+
     /* -- GAME -- */
 
     gameInitialization();               //INITIALIZATION
@@ -117,15 +156,15 @@ main_cmd_loop:
     switch(cmd) {
 
         case CMD_GET_MAPS: 
-            send_maps(players[index]);
+            sendMaps(players[index]);
             goto main_cmd_loop;
 
         case CMD_GET_MAP:
-            send_map(players[index]);
+            sendMap(players[index]);
             goto main_cmd_loop;
 
         case CMD_MOVE:
-            get_move(players[index]);   // FIXME: se viene eliminato un giocatore l'indice potrebbe saltare il turno di un giocatore
+            getMove(players[index]);   // FIXME: se viene eliminato un giocatore l'indice potrebbe saltare il turno di un giocatore
             break;
 
         case CMD_CLOSE_CONNECTION:
@@ -146,12 +185,6 @@ main_cmd_loop:
     goto main_loop;
 
 main_exit:
-    for(uint8_t i=0; i<n_players; i++) {
-        if(!sendCmd(players[i], CMD_CLOSE_CONNECTION)) EXIT_ERRNO;
-    }
-    PRINT("[SERVER]: application exit\n")
-    DEBUG("[DEBUG]: closing sem %d\n", semid);
-    if(semid != -1 && semctl(semid, 0, IPC_RMID) == -1) EXIT_ERRNO
-    return EXIT_SUCCESS;
-
+    PRINT("[SERVER]: server exit\n")
+    exit_function(EXIT_SUCCESS);
 }

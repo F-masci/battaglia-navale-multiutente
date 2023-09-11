@@ -23,15 +23,63 @@
 #include "game.h"
 
 struct sockaddr_in addr_server;
-int socket_client;
+int socket_client = -1;
 cell_t **map;
 uint8_t num;
 char **nicknames;
+
+static void exit_function(int code) {
+    if(socket_client != -1) {
+        if(!sendCmd(CMD_CLOSE_CONNECTION)) exit(EXIT_FAILURE);
+        if(close(socket_client) == -1) exit(EXIT_FAILURE);
+    }
+    exit(code);
+}
+
+static void _sigint_main_handler(int sig, siginfo_t *dummy, void *dummy2) {
+    PRINT("[SERVER]: server exit for SIGINT\n")
+    exit_function(EXIT_SUCCESS);
+}
+
+static void _sigpipe_main_handler(int sig, siginfo_t *dummy, void *dummy2) {
+    PRINT("[SERVER]: server exit for SIGPIPE\n")
+    exit_function(EXIT_FAILURE);
+}
 
 #define BUFF_LEN 1024
 int main(void) {
 
     int i;
+
+    /* -- SIGINT HANDLER -- */
+
+    sigset_t set;
+    sigfillset(&set);
+    sigdelset(&set, SIGINT);
+    if(sigprocmask(SIG_SETMASK, &set, NULL) == -1) exit(EXIT_FAILURE);
+    
+    struct sigaction sa;
+    BZERO(&sa, sizeof(sa));
+    sa.sa_sigaction = _sigint_main_handler;
+    sa.sa_mask = set;
+    sa.sa_flags = 0;
+    sa.sa_restorer = NULL;
+    if(sigaction(SIGINT, &sa, NULL) == -1) exit(EXIT_FAILURE);
+
+    /* -- SIGPIPE HANDLER -- */
+
+    sigemptyset(&set);
+    sigaddset(&set, SIGPIPE);
+    if(sigprocmask(SIG_UNBLOCK, &set, NULL) == -1) exit(EXIT_FAILURE);
+
+    sigfillset(&set);
+
+    BZERO(&sa, sizeof(sa));
+    sa.sa_sigaction = _sigpipe_main_handler;
+    sa.sa_mask = set;
+    sa.sa_flags = 0;
+    sa.sa_restorer = NULL;
+    if(sigaction(SIGPIPE, &sa, NULL) == -1) exit(EXIT_FAILURE);
 
     /* -- CONFIG SERVER ADDRESS -- */
 
@@ -182,82 +230,98 @@ network_loop:
 
     cmd_t cmd;
     char *buffer = (char *)malloc(sizeof(char) * BUFF_LEN);
-    char *message = (char *)malloc(sizeof(char) * BUFF_LEN);
-    uint32_t alive;
+    char *message = NULL;
+    uint16_t alive;
 
 wait_turn:
 
     PRINT("In attesa del proprio turno\n")
 
     cmd = waitCmd();
-    if(cmd == CMD_STATUS){
-        waitString(&message);
-        printf("%s\n", message);
-        BZERO(message, BUFF_LEN);
-        waitString(&message);
-        printf("%s\n", message);
-        waitNum(&alive);
-        if(alive == num+2) goto wait_turn;
-        else if(alive == num+1){
-            PRINT("Sei stato eliminato\n")
-            return EXIT_SUCCESS;
-        }
-        else{
-            PRINT("%s e' stato eliminato\n", nicknames[alive])
 
-            for(uint8_t i=alive; i<num-1; i++){
-                strcpy(nicknames[i], nicknames[i+1]);
-            }
-            free(nicknames[num-1]);
-            num--;
-            if(num == 1){
-                PRINT("Hai vinto!\n")
+    switch(cmd) {
+        case CMD_STATUS:
+
+            waitString(&message);
+            printf("%s\n", message);
+            free(message);
+            message = NULL;
+
+            waitString(&message);
+            printf("%s\n", message);
+            free(message);
+            message = NULL;
+
+            waitNum((uint32_t *) &alive);
+            if((uint8_t) (alive-2) == num) {
+                goto wait_turn;
+            } else if((uint8_t) (alive-1) == num) {
+                PRINT("Sei stato eliminato\n")
                 return EXIT_SUCCESS;
+            } else {
+                PRINT("%s e' stato eliminato\n", nicknames[alive])
+
+                for(uint8_t i=alive; i<num-1; i++){
+                    strcpy(nicknames[i], nicknames[i+1]);
+                }
+                free(nicknames[num-1]);
+                nicknames[num-1] = NULL;
+                num--;
+                if(num == 1){
+                    PRINT("Hai vinto!\n")
+                    return EXIT_SUCCESS;
+                }
+                goto wait_turn;
             }
             goto wait_turn;
-        }
-    }
-    else if(cmd == CMD_TURN){
+        
+        case CMD_TURN:
 
-        clrscr();
-        PRINT("È il tuo turno\n")
+            clrscr();
+            PRINT("È il tuo turno\n")
 
-    main_loop:
+            main_loop:
 
-        //clrscr();
+            //clrscr();
 
-        PRINT("\nSeleziona un comando:\n\n")
-        PRINT("\t[1] Visualizza mappe giocatori\n")
-        PRINT("\t[2] Visualizza una mappa\n")
-        PRINT("\t[3] Invia comando\n\n")
+            PRINT("\nSeleziona un comando:\n\n")
+            PRINT("\t[1] Visualizza mappe giocatori\n")
+            PRINT("\t[2] Visualizza una mappa\n")
+            PRINT("\t[3] Invia comando\n\n")
 
-        PRINT("Comando: ")
-        if(scanf("%hhu", &cmd) <= 0) {
-            while((getchar()) != '\n');
-            goto main_loop;
-        }
-
-        BZERO(buffer, BUFF_LEN);
-        switch(cmd) {
-            case 1: 
-                sendCmd(CMD_GET_MAPS);
-                print_maps();
+            PRINT("Comando: ")
+            if(scanf("%hhu", &cmd) <= 0) {
+                while((getchar()) != '\n');
                 goto main_loop;
+            }
 
-            case 2:
-                sendCmd(CMD_GET_MAP);
-                print_map();
-                goto main_loop;
+            BZERO(buffer, BUFF_LEN);
+            switch(cmd) {
+                case 1: 
+                    sendCmd(CMD_GET_MAPS);
+                    print_maps();
+                    goto main_loop;
 
-            case 3: 
-                sendCmd(CMD_MOVE);
-                make_move();
-                goto wait_turn;
+                case 2:
+                    sendCmd(CMD_GET_MAP);
+                    print_map();
+                    goto main_loop;
 
-            default: goto main_loop;
-        }
+                case 3: 
+                    sendCmd(CMD_MOVE);
+                    make_move();
+                    goto wait_turn;
+
+                default: goto main_loop;
+            }
+            goto wait_turn;
+        
+        case CMD_CLOSE_CONNECTION: return EXIT_FAILURE;
+
+        case CMD_ERROR: return EXIT_FAILURE;
+
+        default: goto wait_turn;
     }
-    else goto wait_turn;
 
     return EXIT_SUCCESS;
 

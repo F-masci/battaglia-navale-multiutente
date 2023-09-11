@@ -39,7 +39,7 @@ void gameInitialization(void){
 
 void make_move(void){
 
-    char *encoded_move = (char *) malloc(4 * sizeof(char)); 
+    char *encoded_move = (char *) malloc(4 * sizeof(*encoded_move));
     BZERO(encoded_move, 4 * sizeof(char));
 
     unsigned char x, y;

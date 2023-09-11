@@ -10,9 +10,8 @@ uint8_t n;  // Total number of ships
 
 static void _place_ship(void);
 static void _delete_ship(void);
-static void _send_map(void);
+static void _sendMap(void);
 
-#define BUFF_LEN 1024
 void printMap(void) {
 
     clrscr();
@@ -104,7 +103,7 @@ map_init_loop:
             break;
         case 3:
             if(size == SHIPS_NUM) {
-                _send_map();
+                _sendMap();
                 return;
             } else {
                 PRINT("Inserisci prima tutte le navi\n")
@@ -310,7 +309,7 @@ static void _delete_ship(void) {
 
 }
 
-static void _send_map(void) {
+static void _sendMap(void) {
 
     sendCmd(CMD_SEND_MAP);
 
@@ -334,5 +333,3 @@ static void _send_map(void) {
 
     return;
 }
-
-#undef BUFF_LEN

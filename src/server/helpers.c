@@ -158,7 +158,6 @@ bool writeString(const player_t * const _player, const char *_buff) {
         }
     } while(rem);
 
-    if(write(_player->socket, _buff, len) < (ssize_t) len)  return false;
     return true;
 
 }

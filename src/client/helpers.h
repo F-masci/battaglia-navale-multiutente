@@ -2,7 +2,7 @@
 
 #include "../shared/lib.h"
 
-bool waitString(char **);
-bool writeString(char *);
-bool writeNum(uint32_t);
-bool waitNum(uint32_t *);
+bool waitNum(uint32_t * const _ptr);
+bool writeNum(uint32_t _num);
+bool waitString(char ** const _buff);
+bool writeString(const char * _buff);
