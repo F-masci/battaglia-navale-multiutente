@@ -2,23 +2,18 @@
 
 extern int socket_client;
 
-char **nicknames; 
+extern char **nicknames; 
 extern uint8_t num;         //total number of players
 uint8_t me;          //index of this client
 
-void gameInitialization(uint8_t time){
+void gameInitialization(void){
 
     char *encoded = NULL;
     waitNum((uint32_t *) &num);
     waitNum((uint32_t *) &me);
     waitString(&encoded);
 
-    DEBUG("check 1\n");
-
-    if(time == 0) nicknames = (char **) malloc(num * sizeof(char *));
-    else nicknames = realloc(nicknames, num * sizeof(char *));
-
-    DEBUG("check 2\n");
+    nicknames = (char **) malloc(num * sizeof(char *));
     
     BZERO(nicknames, num * sizeof(char *));
 
@@ -28,9 +23,7 @@ void gameInitialization(uint8_t time){
     token = strtok(encoded, ";");
 
     while(token != NULL && p < num){
-        if(time == 0) nicknames[p] = (char *) malloc(NICKNAME_LEN * sizeof(char));
-        else nicknames[p] = realloc(nicknames + (p * NICKNAME_LEN), NICKNAME_LEN * sizeof(char));   //sistemare errore invalid pointer
-        DEBUG("check 3\n");
+        nicknames[p] = (char *) malloc(NICKNAME_LEN * sizeof(char));
         BZERO(nicknames[p], NICKNAME_LEN * sizeof(char));
         memcpy(nicknames[p++], token, strlen(token));
         token = strtok(NULL, ";");
@@ -49,30 +42,24 @@ void make_move(void){
     char *encoded_move = (char *) malloc(4 * sizeof(char)); 
     BZERO(encoded_move, 4 * sizeof(char));
 
-    uint8_t x, y;
-
+    unsigned char x, y;
     char *cur = encoded_move;
 
     *cur++ = '0' + (choose_player(1) - 1);
 
     //mental note: check coordinates values
 
-    PRINT("Coordinata x: ");
-retry_x:
-    if(scanf("%hhu", &x)<=0){
+    PRINT("Scegli cella [es. A 0]: ");
+retry:
+    if(scanf("%c %hhu", &x, &y)<=0){
         while((getchar()) != '\n');
-        goto retry_x;
+        goto retry;
     }
+    
+    x = toupper(x) - 'A';
+    if(x>9 || y>9) goto retry;
 
     *cur++ = '0' + x;
-
-    PRINT("Coordinata y: ");
-retry_y:
-    if(scanf("%hhu", &y)<=0){
-        while((getchar()) != '\n');
-        goto retry_y;
-    }
-
     *cur++ = '0' + y;
     *cur = '\0';
 

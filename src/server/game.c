@@ -44,14 +44,14 @@ void get_move(player_t *player){
 
     if(players[index]->map->grid[y1][x1] == '1'){
         players[index]->map->grid[y1][x1] = '2';
-        sprintf(message, "%s ha colpito %s [%hhu; %hhu]\n", player->nickname, players[index]->nickname, x1, y1);
+        sprintf(message, "%s ha colpito %s [%c %hhu]\n", player->nickname, players[index]->nickname, 'A' + x1, y1);
     }
     else if(players[index]->map->grid[y1][x1] == '0' || players[index]->map->grid[y1][x1] == '3'){
         players[index]->map->grid[y1][x1] = '3';
-        sprintf(message, "%s ha mancato %s [%hhu; %hhu]\n", player->nickname, players[index]->nickname, x1, y1);
+        sprintf(message, "%s ha mancato %s [%c %hhu]\n", player->nickname, players[index]->nickname,'A' + x1, y1);
     }
     else if(players[index]->map->grid[y1][x1] == '2'){
-        sprintf(message, "%s ha colpito una parte di una nave di %s già colpita [%hhu; %hhu]\n", player->nickname, players[index]->nickname, x1, y1);
+        sprintf(message, "%s ha colpito una parte di una nave di %s già colpita [%c %hhu]\n", player->nickname, players[index]->nickname, 'A' + x1, y1);
     }
 
     for(int h=0; h<n_players; h++){
@@ -141,18 +141,15 @@ send:
     }
 
     for(uint8_t j=0; j<n_players; j++){
-        if(j == index) {
-            if(elim){
-                writeNum(players[index], 1);
+        if(elim){
+            if(j == index) {
+                writeNum(players[index], n_players + 1);
                 removePlayer(index);
             }
-            else writeNum(players[index], 0);
+            else writeNum(players[j], index);
         }
-        else writeNum(players[j], 0);
+        else writeNum(players[j], n_players + 2);
     }
-
-    gameInitialization();   //manda la lista aggiornata dei nicknames ai client
-
     return;
 }
 #undef BUFF_LEN

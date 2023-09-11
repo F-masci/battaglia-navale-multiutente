@@ -26,6 +26,7 @@ struct sockaddr_in addr_server;
 int socket_client;
 cell_t **map;
 uint8_t num;
+char **nicknames;
 
 #define BUFF_LEN 1024
 int main(void) {
@@ -177,36 +178,40 @@ network_loop:
     for(i=0; i<MAP_SIZE; i++) map[i] = (cell_t *) malloc(MAP_SIZE * sizeof(*(map[i])));
 
     mapInitialization();                   // MAP INITIALIZATION
-    
-    gameInitialization(0);                  // INITIALIZATION OF DATA NEEDED FOR THE GAME
+    gameInitialization();                  // INITIALIZATION OF DATA NEEDED FOR THE GAME
 
     cmd_t cmd;
     char *buffer = (char *)malloc(sizeof(char) * BUFF_LEN);
     char *message = (char *)malloc(sizeof(char) * BUFF_LEN);
-    uint32_t alive=0;
+    uint32_t alive;
 
 wait_turn:
 
     PRINT("In attesa del proprio turno\n")
 
-    //prima di ogni turno il client riceve comunicazioni dal server
-
     cmd = waitCmd();
-    if(cmd == CMD_STATUS) {
+    if(cmd == CMD_STATUS){
         waitString(&message);
         printf("%s\n", message);
         BZERO(message, BUFF_LEN);
         waitString(&message);
         printf("%s\n", message);
         waitNum(&alive);
-        if(alive == 1){
-            PRINT("Hai perso\n");
+        if(alive == num+2) goto wait_turn;
+        else if(alive == num+1){
+            PRINT("Sei stato eliminato\n")
             return EXIT_SUCCESS;
         }
-        else if(alive == 0){
-            gameInitialization(1);      //update nicknames
+        else{
+            PRINT("%s e' stato eliminato\n", nicknames[alive])
+
+            for(uint8_t i=alive; i<num-1; i++){
+                strcpy(nicknames[i], nicknames[i+1]);
+            }
+            free(nicknames[num-1]);
+            num--;
             if(num == 1){
-                PRINT("Hai vinto!");
+                PRINT("Hai vinto!\n")
                 return EXIT_SUCCESS;
             }
             goto wait_turn;
