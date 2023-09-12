@@ -60,16 +60,16 @@ int16_t getMove(const player_t * const _player) {
 
     if(players[index]->map->grid[y1][x1] == '1'){
         players[index]->map->grid[y1][x1] = '2';
-        message = _make_message("%s ha colpito %s [%c %hhu]\n", _player->nickname, players[index]->nickname, 'A' + x1, y1);
+        message = _make_message("%s ha colpito %s [%c %hhu]", _player->nickname, players[index]->nickname, 'A' + x1, y1);
         if(message == NULL) return -1;
     }
     else if(players[index]->map->grid[y1][x1] == '0' || players[index]->map->grid[y1][x1] == '3'){
         players[index]->map->grid[y1][x1] = '3';
-        message = _make_message("%s ha mancato %s [%c %hhu]\n", _player->nickname, players[index]->nickname,'A' + x1, y1);
+        message = _make_message("%s ha mancato %s [%c %hhu]", _player->nickname, players[index]->nickname,'A' + x1, y1);
         if(message == NULL) return -1;
     }
     else if(players[index]->map->grid[y1][x1] == '2'){
-        message = _make_message("%s ha colpito una parte di una nave di %s già colpita [%c %hhu]\n", _player->nickname, players[index]->nickname, 'A' + x1, y1);
+        message = _make_message("%s ha colpito una parte di una nave di %s già colpita [%c %hhu]", _player->nickname, players[index]->nickname, 'A' + x1, y1);
         if(message == NULL) return -1;
     }
 

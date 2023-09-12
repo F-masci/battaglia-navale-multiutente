@@ -89,7 +89,7 @@ int main() {
     sa.sa_restorer = NULL;
     if(sigaction(SIGPIPE, &sa, NULL) == -1) exit(EXIT_FAILURE);
 
-    /* -- INIT GLOBAL VARS -- */
+    /* -- INIT VARIABILI GLOBALI -- */
 
     if(initPlayersArray() == NULL) EXIT_ERRNO
     w_threads = (pthread_t *) malloc(sizeof(*w_threads) * WAITING_THREADS);
@@ -110,7 +110,7 @@ int main() {
         goto main_exit;
     }
 
-    /* -- WAITING FOR ALL MAPS -- */
+    /* -- ATTESA DI TUTTE LE MAPPE -- */
 
     if(semctl(semid, (int) 0, SETVAL, 0) == -1) EXIT_ERRNO;
 
@@ -131,9 +131,7 @@ int main() {
     DEBUG("[DEBUG] Semaphore %d closed\n", semid)
     semid = -1;
 
-    /* -- GAME -- */
-
-    gameInitialization();               //INITIALIZATION
+    gameInitialization();               //INIZIALIZZAZIONE DEL GIOCO
 
     PRINT("[SERVER] Game initialization done\n")
 
@@ -146,7 +144,7 @@ int main() {
 
 main_loop:
 
-    // Start player turn
+    // Inizia turno giocatore
     PRINT("[SERVER]: turn of %s\n", players[index]->nickname)
     if(!sendCmd(players[index], CMD_TURN)) {
         CHECK_ERRNO("Error")

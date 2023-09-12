@@ -4,14 +4,20 @@ extern int socket_client;
 
 uint8_t size=0;
 ship_t *ships;
-uint8_t *c;         //counters for how many ships are left to place in the map
-uint8_t n;          // Total number of ships
+uint8_t *c;         //Contatori per quante navi di ogni tipo sono ancora da posizionare nella mappa
+uint8_t n;          //Numero totale di navi posizionate
 
 static cell_t **map = NULL;
 
 static void _place_ship(void);
 static void _delete_ship(void);
-static void _sendMap(void);
+static bool _sendMap(void);
+
+/**
+ * @brief Funzione per l'inizializzazione della mappa + gestione dell'inserimento delle navi da parte del giocatore
+ *
+ * @note La mappa viene inizialmente riempita di ```0```
+*/
 
 void mapInitialization(void) {
 
@@ -20,7 +26,7 @@ void mapInitialization(void) {
     c = (uint8_t *) malloc( 4 * sizeof(*c));
     ships = (ship_t *) malloc ( n * sizeof(*ships));
 
-    /* -- MAP INITIALIZATION -- */
+    /* -- INIZIALIZZAZIONE MAPPA -- */
 
     map = (cell_t **) malloc(MAP_SIZE * sizeof(*map));
     if(map == NULL) EXIT_ERRNO
@@ -30,14 +36,12 @@ void mapInitialization(void) {
         memset(map[i], '0', MAP_SIZE * sizeof(cell_t));
     }
 
-    /* -- SHIPS TO PLACE -- */
+    /* -- NAVI DA POSIZIONARE -- */
 
     c[0] = DESTROYER;
     c[1] = SUB;
     c[2] = BATTLESHIP;
     c[3] = CARRIER;
-
-    PRINT("\nPOSIZIONAMENTO DELLE NAVI NELLA MAPPA\n");
 
     /* -- LOOP -- */
 
@@ -45,9 +49,11 @@ void mapInitialization(void) {
 
 map_init_loop:
 
-    /* -- PRINT MAP -- */
+    /* -- STAMPA MAPPA -- */
 
     clrscr();
+
+    PRINT("\n     POSIZIONAMENTO DELLE NAVI NELLA MAPPA\n");
 
     PRINT("\n    ");
     for(uint8_t i=0; i<MAP_SIZE; i++){
@@ -82,7 +88,7 @@ map_init_loop:
         PRINT("----");
     }
 
-    /* -- SELECT CMD -- */
+    /* -- SELEZIONE CMD -- */
 
     PRINT("\nSeleziona un comando: \n\n")
     PRINT("\t[1] POSIZIONA NAVE\n")
@@ -105,14 +111,9 @@ map_init_loop:
             _delete_ship();
             break;
         case 3:
-            if(size == SHIPS_NUM) {
-                _sendMap();
-                return;
-            } else {
-                PRINT("Inserisci prima tutte le navi\n")
-                sleep(2);
-                break;
-            }
+            if(_sendMap()) return;
+            else break;
+
         default: break;
 
     }
@@ -122,6 +123,12 @@ map_init_loop:
     return;
 
 }
+
+/**
+ * @brief Funzione per posizionare una nave nella propria mappa
+ *
+ * @note L'inserimento è possibile finché non sono state posizionate tutte le navi disponibili
+*/
 
 static void _place_ship(void) {
 
@@ -165,7 +172,6 @@ place_ship_loop:
             default: goto place_ship_loop;
         }
 
-        //coordinates go from 0 to MAP_SIZE-1
 retry_choice:
         PRINT("Scegli cella [es. A 0]: ");
         if(scanf("%c %hhu", &x, &y) <= 0) {
@@ -177,7 +183,8 @@ retry_choice:
 
         DEBUG("%c %hhu\n", x, y);
 
-        //convert letter to coordinate in map
+        //Converte lettera in coordinata numerica nella mappa
+
         if( (x < 'A' || x > 'J') && (x < 'a' || x > 'j')) goto retry_choice;
 
         x = toupper(x) - 'A';
@@ -241,9 +248,20 @@ retry_choice:
         size++;
         c[cmd-1]--;
     }
-    else PRINT("\nNon ci sono più navi da posizionare\n");
+    else{
+        PRINT("\nNon ci sono più navi da posizionare\n");
+        sleep(2);
+    }
+
+    return;
 
 }
+
+/**
+ * @brief Funzione per eliminare una delle navi già posizionate
+ *
+ * @note Viene mostrata una lista delle navi che sono state posizionate fino ad ora tra le quali il giocatore può scegliere
+*/
 
 static void _delete_ship(void) {
 
@@ -254,7 +272,7 @@ static void _delete_ship(void) {
         return;
     }
 
-    PRINT("\nNavi disponibili\n");
+    PRINT("\nNavi disponibili\n\n");
     for(uint8_t i=0; i<size; i++){
         PRINT("\t[%d] ", i);
         switch(ships[i].dim){
@@ -275,7 +293,7 @@ static void _delete_ship(void) {
     }
 
 try_again:
-    PRINT("Scegli: ");
+    PRINT("\nScegli: ");
     if(scanf("%hhu", &choice) <= 0) {
         EXIT_ERRNO
         while(getchar() != '\n');
@@ -320,7 +338,24 @@ try_again:
 
 }
 
-static void _sendMap(void) {
+/**
+ * @brief Funzione per inviare la mappa definitiva al server
+ *
+ * @note L'invio è permesso solo se non ci sono più navi da posizionare
+ * @note Il client invia al server una stringa in cui sono codificati gli elementi del vettore ships contenente tutte le navi posizionate
+ * @return Ritorna se la mappa è stata inviata o meno
+ *
+ * @retval ```true``` --> mappa inviata al server
+ * @retval ```false``` --> mappa non inviata
+*/
+
+static bool _sendMap(void) {
+
+    if(size != SHIPS_NUM){
+        PRINT("\nCI SONO ANCORA NAVI DA POSIZIONARE\n")
+        sleep(1);
+        return false;
+    }
 
     if(!sendCmd(CMD_SEND_MAP)) EXIT_ERRNO
 
@@ -342,5 +377,7 @@ static void _sendMap(void) {
     if(!writeString(encoded)) EXIT_ERRNO
     PRINT("\nMappa inviata al server\nIn attesa degli altri giocatori...\n");
     free(encoded);
+
+    return true;
 
 }

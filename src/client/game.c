@@ -3,8 +3,14 @@
 extern int socket_client;
 
 extern char **nicknames; 
-extern uint8_t num;                     //total number of players
-extern uint8_t me;                      //index of this client
+extern uint8_t num;                     //Numero totale di giocatori
+extern uint8_t me;                      //Indice di questo client
+
+/**
+ * @brief Riceve dal server i dati sui giocatori connessi alla partita
+ *
+ * @note Vengono ricevuti numero totale dei giocatori, il proprio indice e la lista dei nicknames dei giocatori
+*/
 
 void gameInitialization(void){
 
@@ -42,9 +48,11 @@ void gameInitialization(void){
 }
 
 #define ENCODED_MOVE_LEN 4
+
 /**
- * @brief 
- * 
+ * @brief Funzione per inviare un comando al server
+ *
+ * @note Una mossa consiste nell'indice del giocatore contro cui fare fuoco e nella coordinate sulla mappa
  */
 void makeMove(void){
 
@@ -58,8 +66,6 @@ void makeMove(void){
     char *cur = encoded_move;
 
     *cur++ = '0' + choosePlayer(false);
-
-    //FIXME: check coordinates values
 
 make_move_retry:
 
@@ -75,7 +81,7 @@ make_move_retry:
     if( (x < 'A' || x > 'J') && (x < 'a' || x > 'j')) goto make_move_retry;
 
     x = toupper(x) - 'A';
-    
+
     if(x > 9 || y > 9) goto make_move_retry;
 
     *cur++ = '0' + x;
@@ -86,6 +92,13 @@ make_move_retry:
 }
 #undef ENCODED_MOVE_LEN
 
+/**
+ * @brief Funzione per mostrare le mappe di tutti i giocatori
+ *
+ * @note Viene chiamata la funzione printMap con parametri diversi
+ * @note La mappa del giocatore chiamante verrà mostrata interamente
+ * mentre su quelle degli altri giocatori verranno mostrati solo i colpi (sia andati a segno che falliti)
+*/
 void printMaps(void) {
 
     char *encoded = NULL;
@@ -112,6 +125,12 @@ void printMaps(void) {
 
 }
 
+/**
+ * @brief Funzione per stampare una mappa
+ *
+ * @note  Se chiamata con show_all impostato a ```true``` verranno mostrate anche le navi non ancora colpite
+*/
+
 void printMap(const char *encoded, bool show_all) {
 
     PRINT("\n    ");
@@ -132,7 +151,7 @@ void printMap(const char *encoded, bool show_all) {
                     PRINT("|   ");
                     break;
                 case '1':
-                    PRINT(show_all ? "| X " : "|   ");  // Con show_all impostato a true verranno mostrate anche le navi non ancora colpite
+                    PRINT(show_all ? "| X " : "|   "); 
                     break;
                 case '2':
                     PRINT("| K ");
@@ -153,6 +172,13 @@ void printMap(const char *encoded, bool show_all) {
     PRINT("\n");
 
 }
+
+/**
+* @brief Funzione per selezionare un giocatore
+*
+* @note Se chiamata con _insert_me impostato a ```true``` mostra anche il giocatore chiamante nella lista dei giocatori da poter selezionare
+* @return Indice del giocatore selezionato
+*/
 
 uint8_t choosePlayer(const bool _insert_me) {
 

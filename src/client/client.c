@@ -136,7 +136,7 @@ config_connection_loop:
     switch(config) {
         case 1:
 
-            /* -- SHOW CLIENT NETWORK INTERFACES-- */
+            /* -- MOSTRA INTERFACCE CLIENT NETWORK -- */
 
             PRINT("Seleziona rete:\n\n")
 
@@ -264,9 +264,9 @@ network_loop:
     while(close(udp_socket_client) == -1) EXIT_ERRNO
     addr_server.sin_addr.s_addr = udp_server_addr.sin_addr.s_addr;
 
-    clientConnection();                     // CLIENT CONNECTION
-    mapInitialization();                    // MAP INITIALIZATION
-    gameInitialization();                   // INITIALIZATION OF DATA NEEDED FOR THE GAME
+    clientConnection();                     // CONNESSIONE CLIENT
+    mapInitialization();                    // INIZIALIZZAZIONE MAPPA
+    gameInitialization();                   // INIZIALIZZAZIONI DATI DI GIOCO
 
     cmd_t cmd;
     char *message = NULL;
@@ -283,12 +283,12 @@ wait_turn:
         case CMD_STATUS:
 
             if(!waitString(&message)) EXIT_ERRNO
-            PRINT("%s\n", message)
+            PRINT("\n\t%s\n", message)
             free(message);
             message = NULL;
 
             if(!waitString(&message)) EXIT_ERRNO
-            PRINT("%s\n", message);
+            PRINT("\t%s\n", message);
             free(message);
             message = NULL;
 
@@ -321,8 +321,6 @@ wait_turn:
             PRINT("È il tuo turno\n")
 
 main_loop:
-
-            //clrscr();
 
             PRINT("\nSeleziona un comando:\n\n")
             PRINT("\t[1] Visualizza mappe giocatori\n")
