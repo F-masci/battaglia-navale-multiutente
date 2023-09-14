@@ -71,20 +71,23 @@ handler_loop:
 
             case CMD_START_GAME:
                 player->ready = true;
-                for(uint8_t i=0; i<n_players; i++) {
-                    if(players[i]->ready == false) goto handler_loop;
-                }
 
-                PRINT("[SERVER]: all players ready\n")
-                for(size_t i=0; i<WAITING_THREADS; i++) {
-                    if(pthread_kill(w_threads[i], SIGUSR1) != 0) EXIT_ERRNO
-                }
-                free(w_threads);
-                w_threads = NULL;
-                if(kill(getpid(), SIGUSR2) == -1) EXIT_ERRNO
+                if(n_players > 1) {
+                    for(uint8_t i=0; i<n_players; i++) {
+                        if(players[i]->ready == false) goto handler_loop;
+                    }
 
-                for(size_t i=0; i<n_players; i++) {
-                    if(!sendCmd(players[i], CMD_START_GAME)) EXIT_ERRNO
+                    PRINT("[SERVER]: all players ready\n")
+                    for(size_t i=0; i<WAITING_THREADS; i++) {
+                        if(pthread_kill(w_threads[i], SIGUSR1) != 0) EXIT_ERRNO
+                    }
+                    free(w_threads);
+                    w_threads = NULL;
+                    if(kill(getpid(), SIGUSR2) == -1) EXIT_ERRNO
+
+                    for(size_t i=0; i<n_players; i++) {
+                        if(!sendCmd(players[i], CMD_START_GAME)) EXIT_ERRNO
+                    }
                 }
                 break;
 
@@ -126,26 +129,32 @@ handler_loop:
     goto handler_loop;
 
 handler_exit:
+
+    errno = 0;
+
     PRINT("[%s]: disconnected\n", player->nickname)
-    if(!sendCmd(player, CMD_CLOSE_CONNECTION)) EXIT_ERRNO
+    if(!sendCmd(player, CMD_CLOSE_CONNECTION)) if(errno != EPIPE) EXIT_ERRNO
     if(!removePlayer(player->index)) EXIT_ERRNO
     if(buffer != NULL) free(buffer);
 
-    for(uint8_t i=0; i<n_players; i++) {
-        if(players[i]->ready == false) goto handler_loop;
-    }
+    if(n_players > 1) {
 
-    PRINT("[SERVER]: all players ready\n")
-    for(size_t i=0; i<WAITING_THREADS; i++) {
-        if(pthread_kill(w_threads[i], SIGUSR1) != 0) EXIT_ERRNO
-    }
-    free(w_threads);
-    w_threads = NULL;
-    if(kill(getpid(), SIGUSR2) == -1) EXIT_ERRNO
+        for(uint8_t i=0; i<n_players; i++) {
+            if(players[i]->ready == false) return NULL;
+        }
 
-    for(size_t i=0; i<n_players; i++) {
-        if(!sendCmd(players[i], CMD_START_GAME)) EXIT_ERRNO
-                }
+        PRINT("[SERVER]: all players ready\n")
+        for(size_t i=0; i<WAITING_THREADS; i++) {
+            if(pthread_kill(w_threads[i], SIGUSR1) != 0) EXIT_ERRNO
+        }
+        free(w_threads);
+        w_threads = NULL;
+        if(kill(getpid(), SIGUSR2) == -1) EXIT_ERRNO
+
+        for(size_t i=0; i<n_players; i++) {
+            if(!sendCmd(players[i], CMD_START_GAME)) EXIT_ERRNO
+        }
+    }
 
     return NULL;
 
