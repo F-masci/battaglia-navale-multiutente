@@ -294,6 +294,9 @@ wait_turn:
 
             if(!waitNum((uint32_t *) &alive)) EXIT_ERRNO
             if((uint8_t) (alive-2) == num) {
+                PRINT("\nPREMERE UN QUALUNQUE TASTO PER CONTINUARE: ")
+                getchar();
+                while((getchar()) != '\n');
                 goto wait_turn;
             } else if((uint8_t) (alive-1) == num) {
                 PRINT("Sei stato eliminato\n")
@@ -311,8 +314,14 @@ wait_turn:
                     PRINT("Hai vinto!\n")
                     return EXIT_SUCCESS;
                 }
+                PRINT("\nPREMERE UN QUALUNQUE TASTO PER CONTINUARE: ")
+                getchar();
+                while((getchar()) != '\n');
                 goto wait_turn;
             }
+            PRINT("\nPREMERE UN QUALUNQUE TASTO PER CONTINUARE: ")
+            getchar();
+            while((getchar()) != '\n');
             goto wait_turn;
         
         case CMD_TURN:
