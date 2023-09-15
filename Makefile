@@ -1,9 +1,7 @@
 CC=gcc
-CFLAGS=$(FLAGS) -Wall -Wextra -g -lpthread -lm
-TARGET=main
+CFLAGS=$(FLAGS) -Wall -Wextra -g -lpthread
 SRC_DIR=src
 OBJ_DIR=obj
-PROD_DIR=prod
 
 SRV_DIR=server
 CLN_DIR=client
@@ -17,48 +15,22 @@ OBJ_CLN_DIR=$(OBJ_DIR)/$(CLN_DIR)
 OBJS_SRV=$(patsubst $(SRC_SRV_DIR)/%.c, $(OBJ_SRV_DIR)/%.o, $(wildcard $(SRC_SRV_DIR)/*.c))
 OBJS_CLN=$(patsubst $(SRC_CLN_DIR)/%.c, $(OBJ_CLN_DIR)/%.o, $(wildcard $(SRC_CLN_DIR)/*.c))
 
-OBJ_PROD_SRV=$(patsubst $(SRC_SRV_DIR)/%.c, $(PROD_DIR)/$(SRV_DIR)/%.o, $(wildcard $(SRC_SRV_DIR)/*.c))
-OBJ_PROD_CLN=$(patsubst $(SRC_CLN_DIR)/%.c, $(PROD_DIR)/$(CLN_DIR)/%.o, $(wildcard $(SRC_CLN_DIR)/*.c))
-
 $(OBJ_SRV_DIR)/%.o: $(SRC_SRV_DIR)/%.c
-	$(CC) $< -c $(CFLAGS) -o $@
+	$(CC) $< -c $(CFLAGS) -o $@ $(D)
 
 $(OBJ_CLN_DIR)/%.o: $(SRC_CLN_DIR)/%.c
-	$(CC) $< -c $(CFLAGS) -o $@
+	$(CC) $< -c $(CFLAGS) -o $@ $(D)
 
-all:
-	make server
-	make client
+all: $(sort $(OBJS_SRV) $(OBJS_CLN))
+	$(CC) $(OBJS_SRV) -o server $(CFLAGS) $(D)
+	$(CC) $(OBJS_CLN) -o client $(CFLAGS) $(D)
 
-$(PROD_DIR)/$(SRV_DIR)/%.o: $(SRC_SRV_DIR)/%.c
-	$(CC) $< -c $(CFLAGS) -o $@ -DPROD
-
-$(PROD_DIR)/$(CLN_DIR)/%.o: $(SRC_CLN_DIR)/%.c
-	$(CC) $< -c $(CFLAGS) -o $@ -DPROD
-
-production: $(sort $(OBJ_PROD_SRV) $(OBJ_PROD_CLN))
-	$(CC) $(OBJ_PROD_SRV) -o server $(CFLAGS) -DPROD
-	$(CC) $(OBJ_PROD_CLN) -o client $(CFLAGS) -DPROD
-
-.PHONY: init server client clean remake
+.PHONY: init clean
 
 init:
-	mkdir -p ./$(OBJ_SRV_DIR)
-	mkdir -p ./$(OBJ_CLN_DIR)
-	mkdir -p ./$(PROD_DIR)/$(SRV_DIR)
-	mkdir -p ./$(PROD_DIR)/$(CLN_DIR)
-
-server: $(OBJS_SRV)
-	$(CC) $(OBJS_SRV) -o server $(CFLAGS)
-
-client: $(OBJS_CLN)
-	$(CC) $(OBJS_CLN) -o client $(CFLAGS)
+	if [ ! -d "./$(OBJ_SRV_DIR)" ]; then mkdir -p ./$(OBJ_SRV_DIR); fi
+	if [ ! -d "./$(OBJ_CLN_DIR)" ]; then mkdir -p ./$(OBJ_CLN_DIR); fi
+	@echo "Init completed"
 
 clean:
-	-$(RM) $(TARGET) $(OBJ_DIR)/*/*
-	-$(RM) $(TARGET) $(PROD_DIR)/*/*
-
-remake:
-	make clean
-	make server
-	make client
+	-$(RM) server client $(OBJ_DIR)/*/*
