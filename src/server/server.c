@@ -153,7 +153,7 @@ main_loop:
 
 main_cmd_loop:
     cmd = waitCmd(players[index]);
-    if(cmd == CMD_ERROR) EXIT_ERRNO
+    if(cmd == CMD_ERROR) exit_function(EXIT_FAILURE);
     PRINT("[%s]: request command %hu\n", players[index]->nickname, cmd)
     switch(cmd) {
 

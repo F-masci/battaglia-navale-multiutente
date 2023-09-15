@@ -34,7 +34,7 @@ handler_loop:
         PRINT("[%s]: waiting command\n", player->nickname)
         cmd = waitCmd(player);
         PRINT("[%s]: request command %hhu\n", player->nickname, cmd)
-        if(cmd == CMD_ERROR) raise(SIGINT);
+        if(cmd == CMD_ERROR) kill(getpid(), SIGINT);
         switch(cmd) {
 
             case CMD_SET_NICKNAME: 
@@ -124,7 +124,7 @@ handler_loop:
             
             case CMD_CLOSE_CONNECTION: goto handler_exit;
 
-            default: raise(SIGINT);
+            default: kill(getpid(), SIGINT);
         }
     goto handler_loop;
 
