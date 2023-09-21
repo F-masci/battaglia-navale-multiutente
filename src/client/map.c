@@ -374,6 +374,10 @@ retry_choice:
 
 }
 
+/**
+ * @brief Funzione per posizionare automaticamente le navi nella mappa
+*/
+
 static void _place_ships(void){
 
     uint8_t x, y, dir, dim;

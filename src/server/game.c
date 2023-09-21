@@ -196,7 +196,7 @@ bool sendMaps(const player_t * const _player) {
 
     // N_PLAYERS * MAP_SIZE * MAP_SIZE => mappa di ogni giocatore
     // +
-    // N_PLAYERS => prefisso di ogni mappa per capire se è il giocatore o è q
+    // N_PLAYERS => prefisso di ogni mappa con indice giocatore
     // +
     // 1 => terminatore di stringa
     size_t len = (n_players * MAP_SIZE * MAP_SIZE) + n_players + 1;
@@ -207,11 +207,8 @@ bool sendMaps(const player_t * const _player) {
     DEBUG("[DEBUG]: allocated %ld bytes\n", len * sizeof(*encoded))
 
     for(uint8_t i=0; i<n_players; i++){
-        if(i != index){
-            *encoded++ = '0' + (i+1);
-        } else {
-            *encoded++ = 'M';
-        }
+        
+        *encoded++ = '0' + (i+1);
 
         for(uint8_t j=0; j<MAP_SIZE; j++){
             memcpy(encoded, players[i]->map->grid[j], MAP_SIZE * sizeof(*encoded));

@@ -108,7 +108,7 @@ void printMaps(void) {
 
     for(uint8_t j=0; j<num; j++){
         cur = encoded + j * (MAP_SIZE * MAP_SIZE + 1);
-        if(*cur == 'M'){
+        if(*cur == ('0' + me + 1)){
             PRINT("\n[LA TUA MAPPA] %s\n", nicknames[j]);
             cur = encoded + j * (MAP_SIZE * MAP_SIZE + 1) + 1;
             printMap(cur, true);
