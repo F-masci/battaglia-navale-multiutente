@@ -127,19 +127,19 @@ int16_t getMove(const player_t * const _player) {
 
         switch(dim) {
             case 2:
-                message = _make_message("%s ha affondato DESTROYER di %s\n", _player->nickname, players[index]->nickname);
+                message = _make_message("%s ha affondato CACCIATORPEDINIERE di %s\n", _player->nickname, players[index]->nickname);
                 if(message == NULL) return -1;
                 break;
             case 3:
-                message = _make_message("%s ha affondato SUBMARINE di %s\n", _player->nickname, players[index]->nickname);
+                message = _make_message("%s ha affondato SOTTOMARINO di %s\n", _player->nickname, players[index]->nickname);
                 if(message == NULL) return -1;
                 break;
             case 4:
-                message = _make_message("%s ha affondato BATTLESHIP di %s\n", _player->nickname, players[index]->nickname);
+                message = _make_message("%s ha affondato CORAZZATA di %s\n", _player->nickname, players[index]->nickname);
                 if(message == NULL) return -1;
                 break;
             case 5:
-                message = _make_message("%s ha affondato CARRIER di %s\n", _player->nickname, players[index]->nickname);
+                message = _make_message("%s ha affondato PORTAEREI di %s\n", _player->nickname, players[index]->nickname);
                 if(message == NULL) return -1;
                 break;
             default: break;

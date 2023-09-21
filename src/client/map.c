@@ -50,11 +50,11 @@ void mapInitialization(void) {
 
     clrscr();
 
-    PRINT("\nSCEGLIERE MODALITA' DI POSIZIONAMENTO DELLE NAVI\n")
+    PRINT("\nSCEGLIERE MODALITA' DI POSIZIONAMENTO DELLE NAVI\n\n")
     PRINT("\t[1] MANUALE\n")
     PRINT("\t[2] AUTOMATICA\n")
 retry:
-    PRINT("Scegli: ")
+    PRINT("\nScegli: ")
 
     if(scanf("%hhu", &manual) <= 0) {
         EXIT_ERRNO
@@ -201,16 +201,16 @@ new:
                     PRINT("\t[%d] ", i + 1);
                     switch(ships[i].dim){
                         case 2:
-                            PRINT("DESTROYER (%c%hhu)\n", ships[i].x + 'A', ships[i].y);
+                            PRINT("CACCIATORPEDINIERE (%c%hhu)\n", ships[i].x + 'A', ships[i].y);
                             break;
                         case 3:
-                            PRINT("SUBMARINE (%c%hhu)\n", ships[i].x + 'A', ships[i].y);
+                            PRINT("SOTTOMARINO (%c%hhu)\n", ships[i].x + 'A', ships[i].y);
                             break;
                         case 4:
-                            PRINT("BATTLESHIP (%c%hhu)\n", ships[i].x + 'A', ships[i].y);
+                            PRINT("CORAZZATA (%c%hhu)\n", ships[i].x + 'A', ships[i].y);
                             break;
                         case 5:
-                            PRINT("CARRIER (%c%hhu)\n", ships[i].x + 'A', ships[i].y);
+                            PRINT("PORTAEREI (%c%hhu)\n", ships[i].x + 'A', ships[i].y);
                             break;
                         default: break;
                     }
@@ -251,10 +251,10 @@ static void _place_ship(void) {
 
     if(c[0] || c[1] || c[2] || c[3]) {
         PRINT("\nNavi da posizionare: \n");
-        PRINT("\t[1] %d DESTROYER (DIM 2)\n", c[0]);
-        PRINT("\t[2] %d SUBMARINE (DIM 3)\n", c[1]);
-        PRINT("\t[3] %d BATTLESHIP (DIM 4)\n", c[2]);
-        PRINT("\t[4] %d CARRIER (DIM 5)\n", c[3]);
+        PRINT("\t[1] %d CACCIATORPEDINIERE (DIM 2)\n", c[0]);
+        PRINT("\t[2] %d SOTTOMARINO (DIM 3)\n", c[1]);
+        PRINT("\t[3] %d CORAZZATA (DIM 4)\n", c[2]);
+        PRINT("\t[4] %d PORTAEREI (DIM 5)\n", c[3]);
 
 place_ship_loop:
         PRINT("Scegli: ");
@@ -485,16 +485,16 @@ static void _delete_ship(void) {
         PRINT("\t[%d] ", i);
         switch(ships[i].dim){
             case 2:
-                PRINT("DESTROYER (%c%hhu)\n", ships[i].x + 'A', ships[i].y);
+                PRINT("CACCIATORPEDINIERE (%c%hhu)\n", ships[i].x + 'A', ships[i].y);
                 break;
             case 3:
-                PRINT("SUBMARINE (%c%hhu)\n", ships[i].x + 'A', ships[i].y);
+                PRINT("SOTTOMARINO (%c%hhu)\n", ships[i].x + 'A', ships[i].y);
                 break;
             case 4:
-                PRINT("BATTLESHIP\n");
+                PRINT("CORAZZATA\n");
                 break;
             case 5:
-                PRINT("CARRIER\n");
+                PRINT("PORTAEREI\n");
                 break;
             default: break;
         }
