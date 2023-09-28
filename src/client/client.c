@@ -272,6 +272,9 @@ network_loop:
     char *message = NULL;
     uint16_t alive;
 
+    char *encoded = NULL;
+    uint8_t p;
+
 wait_turn:
 
     PRINT("In attesa del proprio turno\n")
@@ -351,10 +354,8 @@ main_loop:
                     goto main_loop;
 
                 case 2:
+                    p = choosePlayer(true);
                     if(!sendCmd(CMD_GET_MAP)) EXIT_ERRNO
-
-                    char *encoded = NULL;
-                    uint8_t p = choosePlayer(true);
                     if(!writeNum((uint32_t) p)) EXIT_ERRNO
                     if(!waitString(&encoded)) EXIT_ERRNO
 
@@ -367,7 +368,6 @@ main_loop:
                     goto main_loop;
 
                 case 3: 
-                    if(!sendCmd(CMD_MOVE)) EXIT_ERRNO
                     makeMove();
                     goto wait_turn;
 
@@ -376,6 +376,32 @@ main_loop:
             goto wait_turn;
         
         case CMD_CLOSE_CONNECTION: return EXIT_SUCCESS;
+
+        case CMD_DELETE_PLAYER:
+
+            if(!waitNum((uint32_t *) &alive)) EXIT_ERRNO
+            PRINT("%s e' uscito dal gioco\n", nicknames[alive])
+
+            if(alive < me) me--;
+
+            for(uint8_t i=alive; i<num-1; i++){
+                strcpy(nicknames[i], nicknames[i+1]);
+            }
+            free(nicknames[num-1]);
+            nicknames[num-1] = NULL;
+            num--;
+            if(num == 1){
+                PRINT("Hai vinto!\n")
+                return EXIT_SUCCESS;
+            }
+            PRINT("\nPREMERE UN QUALUNQUE TASTO PER CONTINUARE: ")
+            getchar();
+            while((getchar()) != '\n');
+            goto wait_turn;
+
+        case CMD_WIN: 
+            PRINT("Hai vinto!\n")
+            return EXIT_SUCCESS;
 
         case CMD_ERROR: EXIT_ERRNO;
 

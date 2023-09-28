@@ -29,6 +29,8 @@ player_t **players = NULL;                      // Array di puntatori ai metadat
 pthread_t *w_threads;                           // Waiting threads
 int semid = -1;                                 // Semaforo per sincronizzare la ricezione delle mappe
 
+static void _player_exit(player_t *player);
+
 static void exit_function(int code) {
     if(semid != -1) {
         DEBUG("[DEBUG]: closing sem %d\n", semid);
@@ -53,8 +55,20 @@ static void _sigint_main_handler(int sig, siginfo_t *dummy, void *dummy2) {
 }
 
 static void _sigpipe_main_handler(int sig, siginfo_t *dummy, void *dummy2) {
-    PRINT("[SERVER]: server exit for SIGPIPE\n")
-    exit_function(EXIT_FAILURE);
+
+    for(uint8_t i=0; i<n_players; i++) {
+        if(!sendCmd(players[i], CMD_NULL)) {
+            if(errno == EPIPE) {
+                PRINT("[SERVER]: %s disconnected\n", players[i]->nickname)
+                _player_exit(players[i]);
+                errno = 0;
+                continue;
+            }
+            EXIT_ERRNO
+        }
+    }
+
+    PRINT("[SERVER]: server handle SIGPIPE\n")
 }
 
 int main() {
@@ -106,7 +120,7 @@ int main() {
     waitConnections();                      // Create lobby
 
     if(n_players <= 0) {
-        PRINT("[SERVER]: nessun giocatore in lobby\n")
+        PRINT("[SERVER]: zero players in lobby\n")
         goto main_exit;
     }
 
@@ -135,25 +149,47 @@ int main() {
 
     PRINT("[SERVER] Game initialization done\n")
 
+    if(n_players <= 0) {
+        PRINT("[SERVER]: zero players left\n")
+        goto main_exit;
+    }
+
     size_t index = 0;                   // Indice del giocatore di turno
     cmd_t cmd;                          // Comando ricevuto
+    int16_t index_elim;                 // Indice del giocatore eliminato
 
     PRINT("[SERVER] Starting game\n")
 
-    int16_t index_elim;                 // Indice del giocatore eliminato
-
 main_loop:
+
+    if(n_players == 1){
+        if(!sendCmd(players[0], CMD_WIN)) EXIT_ERRNO
+        PRINT("[SERVER] player %s has won\n", players[0]->nickname)
+        return EXIT_SUCCESS;
+    }
 
     // Inizia turno giocatore
     PRINT("[SERVER]: turn of %s\n", players[index]->nickname)
-    if(!sendCmd(players[index], CMD_TURN)) {
-        CHECK_ERRNO("Error")
-        goto main_exit;
+    while(!sendCmd(players[index], CMD_TURN)) {
+        if(errno == EPIPE) {
+            if(index+1 == n_players) index--;
+            index = (index+1)%n_players;
+            errno = 0;
+            continue;
+        }
+        EXIT_ERRNO
     }
 
 main_cmd_loop:
     cmd = waitCmd(players[index]);
-    if(cmd == CMD_ERROR) exit_function(EXIT_FAILURE);
+    if(cmd == CMD_ERROR) {
+        if(errno != EPIPE) EXIT_ERRNO
+        if(index+1 == n_players) index--;
+        _player_exit(players[index]);
+        index = (index+1)%n_players;
+        errno = 0;
+        goto main_loop;
+    }
     PRINT("[%s]: request command %hu\n", players[index]->nickname, cmd)
     switch(cmd) {
 
@@ -166,17 +202,26 @@ main_cmd_loop:
             goto main_cmd_loop;
 
         case CMD_MOVE:
+
+            // Blocca SIGPIPE fino al completamento dell'operazione
+
+            sigemptyset(&set);
+            sigaddset(&set, SIGPIPE);
+            if(sigprocmask(SIG_BLOCK, &set, NULL) == -1) exit(EXIT_FAILURE);
+
             index_elim = getMove(players[index]);
-            if(index_elim <= -1) EXIT_ERRNO
+            if(index_elim <= -1 && errno != EPIPE) EXIT_ERRNO
             if(index == (uint8_t) index_elim) {                 // Nessuna eliminazione
-                for(uint8_t j=0; j<n_players; j++) if(!writeNum(players[j], n_players + 2)) EXIT_ERRNO
+                for(uint8_t j=0; j<n_players; j++) {
+                    if(!writeNum(players[j], n_players + 2)) if(errno != EPIPE) EXIT_ERRNO
+                }
             } else {                                            // Eliminazione di index_elim
                 for(uint8_t j=0; j<n_players; j++){
                     if(j != (uint8_t) index_elim) {
-                        if(!writeNum(players[j], index_elim)) EXIT_ERRNO
+                        if(!writeNum(players[j], index_elim)) if(errno != EPIPE) EXIT_ERRNO
                     }
                 }
-                if(!writeNum(players[index_elim], n_players + 1)) EXIT_ERRNO
+                if(!writeNum(players[index_elim], n_players + 1)) if(errno != EPIPE) EXIT_ERRNO
 
                 // Sistemo l'indice per il prossimo giocatore
                 // Se il prossimo giocatore è il primo togliendo un giocatore egli salterà il turno
@@ -186,6 +231,13 @@ main_cmd_loop:
                 if(!removePlayer(index_elim)) EXIT_ERRNO
 
             }
+
+            // Sblocca SIGPIPE
+
+            sigemptyset(&set);
+            sigaddset(&set, SIGPIPE);
+            if(sigprocmask(SIG_UNBLOCK, &set, NULL) == -1) exit(EXIT_FAILURE);
+
             break;
 
         case CMD_CLOSE_CONNECTION:
@@ -194,15 +246,28 @@ main_cmd_loop:
         default: goto main_cmd_loop;
     }
 
-    if(n_players == 1){
-        PRINT("[SERVER] player %s has won\n", players[0]->nickname)
-        return EXIT_SUCCESS;
-    }
-
     index = (index+1)%n_players;
     goto main_loop;
 
 main_exit:
     PRINT("[SERVER]: server exit\n")
     exit_function(EXIT_SUCCESS);
+}
+
+static void _player_exit(player_t *player) {
+
+    size_t index = player->index;
+
+    PRINT("[SERVER]: %s disconnected\n", player->nickname)
+
+    if(!removePlayer(index)) EXIT_ERRNO
+    for(uint8_t i=0; i<n_players; i++) {
+        if(!sendCmd(players[i], CMD_DELETE_PLAYER)) {
+            if(errno != EPIPE) EXIT_ERRNO
+        }
+        if(!writeNum(players[i], index)) {
+            if(errno != EPIPE) EXIT_ERRNO
+        }
+    }
+
 }

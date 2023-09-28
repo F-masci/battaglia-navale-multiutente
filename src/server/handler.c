@@ -6,6 +6,8 @@ extern player_t **players;                              // Array di puntatori ai
 extern pthread_t *w_threads;                            // Waiting threads
 extern int semid;                                       // Semaforo per sincronizzare la ricezione delle mappe
 
+static bool started = false;
+
 void *clientHandler(void *_ptr) {
 
     errno = 0;
@@ -34,7 +36,7 @@ handler_loop:
         PRINT("[%s]: waiting command\n", player->nickname)
         cmd = waitCmd(player);
         PRINT("[%s]: request command %hhu\n", player->nickname, cmd)
-        if(cmd == CMD_ERROR) kill(getpid(), SIGINT);
+        if(cmd == CMD_ERROR) goto handler_exit;
         switch(cmd) {
 
             case CMD_SET_NICKNAME: 
@@ -78,6 +80,7 @@ handler_loop:
                     }
 
                     PRINT("[SERVER]: all players ready\n")
+                    started = true;
                     for(size_t i=0; i<WAITING_THREADS; i++) {
                         if(pthread_kill(w_threads[i], SIGUSR1) != 0) EXIT_ERRNO
                     }
@@ -124,7 +127,7 @@ handler_loop:
             
             case CMD_CLOSE_CONNECTION: goto handler_exit;
 
-            default: kill(getpid(), SIGINT);
+            default: goto handler_exit;
         }
     goto handler_loop;
 
@@ -137,7 +140,7 @@ handler_exit:
     if(!removePlayer(player->index)) EXIT_ERRNO
     if(buffer != NULL) free(buffer);
 
-    if(n_players > 1) {
+    if(!started && n_players > 1) {
 
         for(uint8_t i=0; i<n_players; i++) {
             if(players[i]->ready == false) return NULL;

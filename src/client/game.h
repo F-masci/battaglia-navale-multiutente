@@ -2,6 +2,7 @@
 
 #include "../shared/config.h"
 #include "../shared/lib.h"
+#include "../shared/cmd.h"
 
 #include "helpers.h"
 #include "type.h"

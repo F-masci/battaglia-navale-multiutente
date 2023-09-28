@@ -60,24 +60,24 @@ int16_t getMove(const player_t * const _player) {
 
     if(players[index]->map->grid[y1][x1] == '1'){
         players[index]->map->grid[y1][x1] = '2';
-        message = _make_message("%s ha colpito %s [%c %hhu]", _player->nickname, players[index]->nickname, 'A' + x1, y1);
+        message = _make_message("%s ha colpito %s [%c %hhu]\n", _player->nickname, players[index]->nickname, 'A' + x1, y1);
         if(message == NULL) return -1;
     }
     else if(players[index]->map->grid[y1][x1] == '0' || players[index]->map->grid[y1][x1] == '3'){
         players[index]->map->grid[y1][x1] = '3';
-        message = _make_message("%s ha mancato %s [%c %hhu]", _player->nickname, players[index]->nickname,'A' + x1, y1);
+        message = _make_message("%s ha mancato %s [%c %hhu]\n", _player->nickname, players[index]->nickname,'A' + x1, y1);
         if(message == NULL) return -1;
     }
     else if(players[index]->map->grid[y1][x1] == '2'){
-        message = _make_message("%s ha colpito una parte di una nave di %s già colpita [%c %hhu]", _player->nickname, players[index]->nickname, 'A' + x1, y1);
+        message = _make_message("%s ha colpito una parte di una nave di %s già colpita [%c %hhu]\n", _player->nickname, players[index]->nickname, 'A' + x1, y1);
         if(message == NULL) return -1;
     }
 
     PRINT("[%s]: %s", _player->nickname, message)
 
     for(uint8_t h=0; h<n_players; h++){
-        if(!sendCmd(players[h], CMD_STATUS)) return -1;
-        if(!writeString(players[h], message)) return -1;
+        if(!sendCmd(players[h], CMD_STATUS)) if(errno != EPIPE) return -1;
+        if(!writeString(players[h], message)) if(errno != EPIPE) return -1;
     }
 
     free(message);
@@ -160,7 +160,7 @@ send:
     if(message == NULL) return -1;
 
     for(uint8_t h=0; h<n_players; h++){
-        if(!writeString(players[h], message)) return -1;
+        if(!writeString(players[h], message)) if(errno != EPIPE) return -1;
     }
 
     free(message);

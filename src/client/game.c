@@ -87,6 +87,7 @@ make_move_retry:
     *cur++ = '0' + x;
     *cur++ = '0' + y;
 
+    if(!sendCmd(CMD_MOVE)) EXIT_ERRNO
     if(!writeString(encoded_move)) EXIT_ERRNO
 
 }

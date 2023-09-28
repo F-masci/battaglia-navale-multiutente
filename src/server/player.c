@@ -3,6 +3,7 @@
 extern player_t **players;                              // Array di giocatori
 static size_t players_len = DEFAULT_PLAYERS_LEN;        // Lunghezza dell'array dei giocatori
 extern uint8_t n_players;                               // Numero di giocatori in lobby
+extern int semid;                                       // Semaforo per sincronizzare la ricezione delle mappe
 
 /**
  * @brief Crea un nuovo giocatore
@@ -97,6 +98,21 @@ bool removePlayer(const size_t _index) {
     }
     players[n_players-1] = 0;
     n_players--;
+
+    if(semid != -1) {
+
+        struct sembuf so;
+        BZERO(&so, sizeof(so));
+        so.sem_num = 0;
+        so.sem_op = (short) 1;
+        so.sem_flg = 0;
+        while(semop(semid, &so, 1) == -1) {
+            EXIT_ERRNO
+            errno = 0;
+        };
+
+    }
+
     return true;
 }
 
